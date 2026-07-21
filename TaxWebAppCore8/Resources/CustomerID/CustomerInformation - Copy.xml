@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<DTOServerInfo xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+			   xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+	<CustomerName>فامیلی مارکت</CustomerName>
+ 
+	<MEMORY_ID>62712707375</MEMORY_ID>
+ 
+ 
+	<TINS>62712707375</TINS>
+ 
+ 
+	 <API_URL>https://portal.tisstsp.ir/api/</API_URL> 
+ 
+	
+ <FILE_KEY_PRIVATE>		eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI1Vy1ka2tQaDd4MGxEOVdqbTF5TXJKY0s4SldlSUtFQ1NiQ3k0SU9HSG1FIn0.eyJleHAiOjE3NTQyODk4ODcsImlhdCI6MTcyMjc1Mzg4NywianRpIjoiMmZlZmJjNTMtOTliNi00MGNjLTk1ODQtMzVlZmEzNjJmYmFhIiwiaXNzIjoiaHR0cHM6Ly9zc28udGlzc3RzcC5pci9yZWFsbXMvVFNQIiwiYXVkIjoiYWNjb3VudCIsInN1YiI6IjMwYjI4MzQyLTc3OWEtNDk0Ni05ZjVhLWE3ZTc0NWUxZGFjOCIsInR5cCI6IkJlYXJlciIsImF6cCI6ImFwaS1rZXkiLCJzZXNzaW9uX3N0YXRlIjoiNTUxNjE5MGItY2M3Mi00ODVjLWJjZWYtZTE3MzlhMjllNTIwIiwiYWNyIjoiMSIsImFsbG93ZWQtb3JpZ2lucyI6WyIqIl0sInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJvZmZsaW5lX2FjY2VzcyIsInVtYV9hdXRob3JpemF0aW9uIiwiZGVmYXVsdC1yb2xlcy10c3AiXX0sInJlc291cmNlX2FjY2VzcyI6eyJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19LCJzY29wZSI6Im9wZW5pZCBvcmdhbml6YXRpb24gb2ZmbGluZV9hY2Nlc3MgcHJvZmlsZSIsInNpZCI6IjU1MTYxOTBiLWNjNzItNDg1Yy1iY2VmLWUxNzM5YTI5ZTUyMCIsInByZWZlcnJlZF91c2VybmFtZSI6IjAwMTQ5NzEyNzUifQ.qCpppbsg-DNQaeToPn7nE1AXpN-qa7JfazN1IEOb0-Qrmb8Bii3GISKd22NY_mw9XOeMaIFScwXNMv7aTDTi5cIY6rOAF6ldZKqRYfgIjGBkH6qSor1JioQ5Z6-nCkeASpnYFOREvHidfjkelX2WyQ_s7-PI_vVtBvcn95QHPnCNL1WqoUvF0xL1Z9tkF1F5naEsQftZ5s0kuSAjxLLY4cLwSpRUZIRnq7k69AVT-4L2Tjjrv0kWqL1rkdXRKBd1YyFXNpQCJHGDVyhEUWp9-Kls5wvOJEudKWOv6WYMYn2ePBBCNmSp3-GiJU0ijT2Tdq59Qh9yFhsSI4kIOL9vAw
+	</FILE_KEY_PRIVATE> 
+ 
+
+	<FILE_CERTIFICATE>C:\key\arghamnegarandisheh [Stamp].crt</FILE_CERTIFICATE>
+	
+	<!--آدرس فایل گواهی امضای دیجیتال به فرمت 64Base. نمونه:
+	C:/certificate.cer -->
+
+	<!--برای حالت استفاده از توکن-->
+	<TokenType>CertificateFile</TokenType>
+	<!--HardLock Or CertificateFile-->
+	<PASSWORD>123</PASSWORD>
+	<LIBRARY_PATH>123</LIBRARY_PATH>
+	<CertificateName>123</CertificateName>
+	<!--ابتدا نرم افزار exe-1.0.17.519.English3003-ePass را نصب کنید. پس از متصلنمودن توکن،
+	نرمافزار را باز کرده و بر روی دکمه Login کلیک کرده و پسورد خود را وارد کنید. لیستی از کلیدهای توکن
+	مطابق شکل زیر به نمای ش در میآید:-->
+	<!--مقدار موجود در قسمت Name Certificate گواهی مورد نظر شما همان Alias می باشد که
+	میتوانید به عنوان نام گواهی هنگام پیکربندی SDK به تابع create کالس SignatoryFactory11Pkcs
+	بدهید تا عملیات امضای توکن و صورتحساب را برای شما انجام بدهد-->
+
+	<DataBaseServer>.\RWP</DataBaseServer>
+	<DbName>RWP_Sale_DB</DbName>
+	<UserId>sa</UserId>
+	<UserPass>RWP@1393</UserPass>
+	<ConnectionTimeOut>120</ConnectionTimeOut>
+	<!--Based On Second-->
+
+	<ServiceType>Tis</ServiceType>
+	<!--Tis OR Tax-->
+	<DataBaseType>Baran</DataBaseType>
+	<!--Baran OR Argham-->
+	
+	<!--نیازی به ست شدن نیست-->
+	<StoreId>1</StoreId>
+	<!--کد یا آی دی مربوط به فروشگاه-->
+
+	<License>qZqWmQtT-zzYIwspymq7X0i5d1bQLin9xD7ADW3KzVo</License>
+	<!--لایسنس مشتری-->
+
+</DTOServerInfo>

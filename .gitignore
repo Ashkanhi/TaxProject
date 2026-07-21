@@ -1,0 +1,50 @@
+# Visual Studio and user-specific files
+.vs/
+.idea/
+.cr/
+$tf/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.rsuser
+*.vssscc
+*.vspscc
+
+# Build output and generated symbols
+**/[Bb]in/
+**/[Oo]bj/
+**/[Dd]ebug/
+**/[Rr]elease/
+**/artifacts/
+**/publish/
+*.pdb
+
+# Restored dependencies
+node_modules/
+packages/
+*.nupkg
+
+# Runtime and temporary files
+*.log
+*.tmp
+*.cache
+**/logs/
+**/App_Data/*.db
+**/App_Data/*.db-*
+**/App_Data/*.sqlite
+**/App_Data/*.sqlite-*
+
+# Local configuration and secrets
+TaxWebAppCore8/appsettings.json
+**/appsettings.Local.json
+**/appsettings.Production.json
+**/CustomerInformation.xml
+*.pem
+*.pfx
+*.p12
+*.key
+private.txt
+pk.txt
+
+*.xlsx

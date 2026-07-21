@@ -1,0 +1,678 @@
+/****** Object:  Table [dbo].[TaxGovermentInoiceDetailLog]    Script Date: 11/6/2023 2:59:13 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TaxGovermentInoiceDetailLog](
+	[Sstid] [nvarchar](255) NULL,
+	[Sstt] [nvarchar](255) NULL,
+	[Mu] [varchar](50) NULL,
+	[Am] [decimal](19, 3) NULL,
+	[Fee] [decimal](18, 0) NULL,
+	[Prdis] [decimal](38, 6) NULL,
+	[Dis] [decimal](20, 3) NULL,
+	[Adis] [decimal](38, 6) NULL,
+	[Vra] [decimal](18, 0) NULL,
+	[Vam] [decimal](18, 0) NULL,
+	[Odt] [varchar](50) NULL,
+	[Odr] [decimal](18, 0) NULL,
+	[Odam] [decimal](18, 0) NULL,
+	[Olt] [varchar](50) NULL,
+	[Olr] [decimal](18, 0) NULL,
+	[Olam] [decimal](18, 0) NULL,
+	[Consfee] [decimal](18, 0) NULL,
+	[Spro] [decimal](18, 0) NULL,
+	[Bros] [decimal](18, 0) NULL,
+	[Tcpbs] [decimal](18, 0) NULL,
+	[Cop] [decimal](38, 6) NULL,
+	[Vop] [decimal](18, 0) NULL,
+	[Bsrn] [varchar](1) NOT NULL,
+	[Tsstam] [decimal](38, 6) NULL,
+	[Nw] [decimal](18, 0) NULL,
+	[Ssrv] [decimal](18, 0) NULL,
+	[Sscv] [decimal](18, 0) NULL,
+	[InvoiceId] [uniqueidentifier] NULL,
+	[Date] [datetime] NULL
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TaxGovermentInoiceHeaderLog]    Script Date: 11/6/2023 2:59:13 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TaxGovermentInoiceHeaderLog](
+	[InvoiceId] [uniqueidentifier] NOT NULL,
+	[CreateDate] [datetime] NULL,
+	[SaveDate] [datetime] NULL,
+	[Inty] [int] NOT NULL,
+	[Taxid] [nvarchar](50) NULL,
+	[Inno] [nvarchar](50) NULL,
+	[Inp] [int] NOT NULL,
+	[Ins] [int] NULL,
+	[Tins] [varchar](15) NOT NULL,
+	[Tob] [int] NOT NULL,
+	[Bid] [varchar](20) NOT NULL,
+	[Tinb] [varchar](20) NOT NULL,
+	[Sbc] [varchar](1) NOT NULL,
+	[Bpc] [varchar](1) NOT NULL,
+	[Bbc] [varchar](1) NOT NULL,
+	[Ft] [int] NOT NULL,
+	[Scln] [varchar](1) NOT NULL,
+	[Scc] [varchar](1) NOT NULL,
+	[Crn] [varchar](1) NOT NULL,
+	[Billid] [varchar](1) NOT NULL,
+	[Tprdis] [decimal](18, 0) NULL,
+	[Tdis] [decimal](18, 0) NULL,
+	[Tadis] [decimal](18, 0) NULL,
+	[Tvam] [decimal](18, 0) NULL,
+	[Todam] [decimal](18, 0) NULL,
+	[Tbill] [decimal](18, 0) NULL,
+	[Setm] [int] NOT NULL,
+	[Cap] [decimal](18, 0) NULL,
+	[Insp] [decimal](18, 0) NULL,
+	[Tvop] [decimal](18, 0) NULL,
+	[Tax17] [decimal](18, 0) NULL,
+	[Cdcn] [varchar](1) NOT NULL,
+	[Cdcd] [int] NOT NULL,
+	[Tonw] [decimal](18, 0) NULL,
+	[Torv] [decimal](18, 0) NULL,
+	[Tocv] [decimal](18, 0) NULL,
+	[Date] [datetime] NULL
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TaxGovermentInvoiceFinal]    Script Date: 11/6/2023 2:59:13 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TaxGovermentInvoiceFinal](
+	[Id] [bigint] IDENTITY(1,1) NOT NULL,
+	[InvoiceId] [nvarchar](50) NOT NULL,
+	[LastStatus] [nvarchar](50) NULL,
+	[Done] [bit] NULL,
+	[TaxId] [nvarchar](50) NULL,
+	[LastRefrenceId] [nvarchar](50) NULL,
+	[LastResponseCheckTime] [datetime] NULL,
+ CONSTRAINT [PK_TaxGovermentInvoiceFinal] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TaxGovermentInvoiceInfo]    Script Date: 11/6/2023 2:59:13 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TaxGovermentInvoiceInfo](
+	[TaxGovermentInvoiceInfoId] [bigint] IDENTITY(1,1) NOT NULL,
+	[InvoiceId] [uniqueidentifier] NOT NULL,
+	[ReferenceNumber] [nvarchar](100) NULL,
+	[Status] [nvarchar](50) NULL,
+	[InvoiceUniqueId] [nvarchar](50) NULL,
+	[UId] [nvarchar](100) NULL,
+	[SendDate] [datetime] NULL,
+	[IsReturn] [bit] NULL,
+	[Done] [bit] NULL,
+ CONSTRAINT [PK_TaxGovermentInvoiceInfo] PRIMARY KEY CLUSTERED 
+(
+	[TaxGovermentInvoiceInfoId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TaxGovermentSendLog]    Script Date: 11/6/2023 2:59:13 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TaxGovermentSendLog](
+	[LogId] [bigint] IDENTITY(1,1) NOT NULL,
+	[Date] [datetime] NULL,
+	[Status] [nvarchar](50) NULL,
+	[RefrenceId] [nvarchar](100) NULL,
+	[UId] [nvarchar](100) NULL,
+	[Json] [nvarchar](max) NULL,
+	[TaxGovermentInvoiceInfoId] [nchar](10) NULL,
+	[PacketType] [nvarchar](50) NULL,
+	[LogDate] [datetime] NULL,
+ CONSTRAINT [PK_TaxGovermentSendLog] PRIMARY KEY CLUSTERED 
+(
+	[LogId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TaxGovermentSettingInfo]    Script Date: 11/6/2023 2:59:13 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TaxGovermentSettingInfo](
+	[StoreId] [int] NOT NULL,
+	[PrivateKey] [nvarchar](max) NOT NULL,
+	[ClientId] [nvarchar](50) NULL,
+	[PrivateKeyPath] [nvarchar](500) NULL,
+	[ResponseCheckerTimeInSec] [int] NULL
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[TaxGovermentInoiceDetailLog] ADD  CONSTRAINT [DF_TaxGovermentInoiceDetailLog_Date]  DEFAULT (getdate()) FOR [Date]
+GO
+ALTER TABLE [dbo].[TaxGovermentInoiceHeaderLog] ADD  CONSTRAINT [DF_TaxGovermentInoiceHeaderLog_Date]  DEFAULT (getdate()) FOR [Date]
+GO
+ALTER TABLE [dbo].[TaxGovermentInvoiceFinal] ADD  DEFAULT (getdate()) FOR [LastResponseCheckTime]
+GO
+ALTER TABLE [dbo].[TaxGovermentInvoiceInfo] ADD  CONSTRAINT [DF_TaxGovermentInvoiceInfo_SendDate]  DEFAULT (getdate()) FOR [SendDate]
+GO
+ALTER TABLE [dbo].[TaxGovermentSendLog] ADD  DEFAULT (getdate()) FOR [LogDate]
+GO
+/****** Object:  StoredProcedure [dbo].[TaxGovermentGetInvoiceDetailForSend]    Script Date: 11/6/2023 2:59:13 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[TaxGovermentGetInvoiceDetailForSend]
+(
+    @InvoiceID NVARCHAR(50) = '',
+    @IsReturn BIT = 0
+)
+AS
+BEGIN
+
+    DECLARE @Fee DECIMAL(18, 0),
+            @DiscountP INT,
+            @PriceAfterDiscount DECIMAL(18, 0),
+            @Qty DECIMAL(18, 3);
+
+
+
+    SELECT FTR.fldFactorID,
+           FTR.fldID,
+           FTR.fldRowNo,
+           DiscountPercent = 0,
+           Discount = FTR.fldDiscountPrice,
+           Qty = (FTR.fldQty),
+           Fee = FTR.fldPrice / FTR.fldQty,
+           FullPrice = FTR.fldPrice,
+           TaxPrice = SUM(FTRT.fldPrice) OVER (PARTITION BY FTR.fldID)
+    INTO #tmpCalcItems
+    FROM Sales.tbl_FactorRow FTR
+        INNER JOIN
+        (
+            SELECT fldFactorRowID,
+                   SUM(fldPrice) fldPrice
+            FROM Sales.tbl_FactorRowTaxes
+            GROUP BY fldFactorRowID
+        ) FTRT
+            ON FTRT.fldFactorRowID = FTR.fldID
+    WHERE FTR.fldFactorID = @InvoiceID;
+
+
+
+
+    SELECT Sstid = Item.fldComponentDescription,                                       --ifmv.Barcode,
+           Sstt = Item.fldDescription,
+           Mu = ISNULL(Unit.fldComponentDescription, N'1027'),
+           Am = CI.Qty,                                                                -- تعداد
+           Fee = CONVERT(DECIMAL(18, 0), CI.Fee),                                      --- Fee,
+           Prdis = CONVERT(DECIMAL(18, 0), CI.FullPrice),                              --مبلغ قبل تخفیف
+           Dis = CONVERT(DECIMAL(18, 0), CI.Discount),                                 --مبلغ تخفیف
+           Adis = CONVERT(DECIMAL(18, 0), CI.FullPrice - CI.Discount),          --مبلغ بعد از تخفیف
+           Vra = CONVERT(   DECIMAL(18, 2),
+                            (CASE
+                                 WHEN CI.TaxPrice > 0 THEN
+                                     9 --0.09
+                                 ELSE
+                                     0
+                             END
+                            )
+                        ),                                                             --نرخ مالیات بر ارزش افزوده
+           Vam = CONVERT(DECIMAL(18, 0), CI.TaxPrice),                                 --مبلغ مالیات بر ارزش افزوده                                                --FTR.TaxAmount + FTR.TollAmount,
+           Odt = '',
+           Odr = CONVERT(DECIMAL, 0),
+           Odam = CONVERT(DECIMAL, 0),
+           Olt = '',
+           Olr = CONVERT(DECIMAL, 0),
+           Olam = CONVERT(DECIMAL, 0),
+           Consfee = CONVERT(DECIMAL, 0),
+           Spro = CONVERT(DECIMAL, 0),
+           Bros = CONVERT(DECIMAL, 0),
+           Tcpbs = CONVERT(DECIMAL, 0),
+           Cop = CONVERT(DECIMAL, 0),
+                                                                                       --سهم نقدی از پرداخت
+           Vop = CONVERT(DECIMAL(18, 0), 0),                                           --سهم ارزش افزوده از پرداخت                                                --FTR.TaxAmount + FTR.TollAmount,
+           Bsrn = '0',
+           Tsstam = CONVERT(DECIMAL(18, 0), CI.FullPrice - CI.Discount + CI.TaxPrice), --مبلغ کل کالا و خدمات
+           Nw = CONVERT(DECIMAL, 0),
+           Ssrv = CONVERT(DECIMAL, 0),
+           Sscv = CONVERT(DECIMAL, 0),
+           FT.fldID,
+           GETDATE() [Date]
+    INTO #tmp
+    FROM Sales.tbl_FactorTitle AS FT
+        INNER JOIN Sales.tbl_FactorRow AS FTR
+            ON FT.fldID = FTR.fldFactorID
+        INNER JOIN #tmpCalcItems CI
+            ON FTR.fldID = CI.fldID
+        INNER JOIN Common.tbl_CodingComponents P
+            ON FT.fldCustomerID = P.fldformGeneratorID
+        INNER JOIN Common.tbl_Persons Pers
+            ON P.fldformGeneratorID = Pers.fldID
+        INNER JOIN Common.tbl_CodingComponents Item
+            ON FTR.fldItemID = Item.fldformGeneratorID
+        LEFT JOIN Common.tbl_CodingComponentItem CItm
+            ON FTR.fldItemID = CItm.fldformGeneratorID
+        LEFT JOIN Common.tbl_CodingComponents Unit
+            ON CItm.fldUnit = Unit.fldformGeneratorID
+    WHERE FT.fldID = @InvoiceID;
+
+
+    INSERT INTO TaxGovermentInoiceDetailLog
+    SELECT *
+    FROM #tmp;
+    SELECT *
+    FROM #tmp;
+    DROP TABLE #tmp;
+
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[TaxGovermentGetInvoiceHeaderForSend]    Script Date: 11/6/2023 2:59:13 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[TaxGovermentGetInvoiceHeaderForSend]
+    @InvoiceType SMALLINT = 1,
+    @InvoiceId NVARCHAR(50) = ''
+AS
+BEGIN
+    --@InvoiceType {1 main 2 edit 3 cancel 4 return}
+    DECLARE @refReturnTranFTD NVARCHAR(50) = N'',
+            @TaxID NVARCHAR(50) = N'',
+            @IsReturn BIT = 0,
+            @CustomerId UNIQUEIDENTIFIER;
+    --set @InvoiceId = '48B0F6AE-4BD3-AEEA-E928-59853151CD5A'
+    IF @InvoiceType = 3
+    BEGIN
+
+        SELECT @TaxID = TaxId
+        FROM dbo.TaxGovermentInvoiceFinal
+        WHERE InvoiceId = @InvoiceId;
+
+    END;
+
+    --SET @InvoiceId = '40397353-47B1-9F10-9A4F-3E6AC511F0D5'
+
+    IF (@InvoiceType <> 3)
+       AND LEN(ISNULL(@InvoiceId, '')) = 0
+    BEGIN
+        SELECT TOP 1
+               @InvoiceId = FT.fldID,
+               @CustomerId = FT.fldCustomerID,
+               @IsReturn = (CASE
+                                WHEN FT.fldDocumentType = 2 THEN
+                                    0
+                                ELSE
+                                    1
+                            END
+                           )
+        FROM Sales.tbl_FactorTitle AS FT
+            INNER JOIN Sales.tbl_FactorRow AS FTR
+                ON FT.fldID = FTR.fldFactorID
+            LEFT JOIN Common.tbl_CodingComponents Per
+                ON FT.fldCustomerID = Per.fldformGeneratorID
+            LEFT JOIN Common.tbl_CodingComponentItem CI
+                ON CI.fldformGeneratorID = FTR.fldItemID
+            LEFT JOIN dbo.TaxGovermentInvoiceFinal TGov
+                ON TGov.InvoiceId = FT.fldID
+        WHERE FT.fldDocumentType = 2
+              AND FT.fldState = 1
+              AND FT.fldDate >= CONVERT(DATE, GETDATE() - 90)
+              AND
+              (
+                  TGov.InvoiceId IS NULL
+                  OR TGov.Done = 0
+              )
+              --AND FT.fldID <> '74D55B1F-4E24-99EB-501B-B7CBA25E21A5'
+              AND ISNULL(TGov.LastStatus, '') NOT IN ( 'PENDING', 'SUCCESS', 'FAILED' )
+        --AND ISNULL(TGov.LastStatus, '') <> 'SUCCESS'
+        ORDER BY FT.fldDate,
+                 FT.fldDocumentNo;
+
+    END;
+    IF EXISTS
+    (
+        SELECT *
+        FROM dbo.TaxGovermentInvoiceFinal TGov
+        WHERE InvoiceId = @InvoiceId
+              AND ISNULL(TGov.LastStatus, '') = 'SUCCESS'
+    )
+       AND @InvoiceType <> 3
+    BEGIN
+        PRINT @InvoiceId;
+        PRINT 'Exists';
+        RETURN;
+    END;
+    --SELECT @InvoiceId,
+    --@IsReturn;
+
+    --IF
+    --(
+    --    SELECT fldBirthCertificateNo
+    --    FROM Common.tbl_Persons
+    --    WHERE fldID = @CustomerId AND fldPersonTitleCode = 100
+    --) IS NULL
+    --BEGIN
+    --    PRINT 'fldBirthCertificateNo Error' + CONVERT(NVARCHAR(50),@InvoiceId);
+    --    RETURN;
+    --END;
+
+    IF (LEN(@InvoiceId) = 0 OR @InvoiceId IS NULL)
+        SET @InvoiceId = '00000000-0000-0000-0000-000000000000';
+
+    SELECT FTR.fldFactorID,
+           FTR.fldID,
+           FTR.fldRowNo,
+           DiscountPercent = 0,
+           Discount = FTR.fldDiscountPrice,
+           Qty = (FTR.fldQty),
+           Fee = FTR.fldPrice / FTR.fldQty,
+           FullPrice = FTR.fldPrice,
+           TaxPrice = SUM(FTRT.fldPrice) OVER (PARTITION BY FTR.fldID)
+    INTO #tmpCalcItems
+    FROM Sales.tbl_FactorRow FTR
+        LEFT JOIN
+        (
+            SELECT fldFactorRowID,
+                   SUM(fldPrice) fldPrice
+            FROM Sales.tbl_FactorRowTaxes
+            GROUP BY fldFactorRowID
+        ) FTRT
+            ON FTRT.fldFactorRowID = FTR.fldID
+    WHERE FTR.fldFactorID = @InvoiceId;
+    --SELECT @InvoiceId;
+    --SELECT *
+    --FROM Sales.tbl_FactorRow
+    --WHERE fldFactorID = @InvoiceId;
+    --SELECT *
+    --FROM #tmpCalcItems;
+
+    SELECT TOP 1
+           InvoiceId = FT.fldID,
+           CreateDate = CASE
+                            WHEN @InvoiceType = 3 THEN
+                                CONVERT(DATETIME, CAST(FT.fldDate AS DATETIME) ) + 1
+                            ELSE
+                                CONVERT(DATETIME, CAST(FT.fldDate AS DATETIME) )
+                        END,
+           SaveDate = GETDATE(),
+           Inty = 1,                                                                                                       --Type{1 - 2 - 3}
+                                                                                                                           --Taxid = @TaxID,
+           Inno = CONVERT(NVARCHAR(10), FT.fldDocumentNo),                                                                 -- FT.InvoiceID,
+           Irtaxid = CASE
+                         WHEN @InvoiceType = 3 THEN
+                             @TaxID
+                         ELSE
+                             NULL
+                     END,
+           Inp = 1,                                                                                                        -- Pattern {1 sale 2 currency 3 gold 4 partner 5 service payroll 6 airplane}
+           Ins = (CASE
+                      WHEN @InvoiceType = 3 THEN
+                          @InvoiceType
+                      ELSE
+           (CASE
+                WHEN @IsReturn = 1 THEN
+                    4
+                ELSE
+                    1
+            END
+           )
+                  END
+                 ),                                                                                                        -- subject {1 main 2 edit 3 cancel 4 return}
+           Tins = '10861454679',                                                                                           -- seller eco num
+           Tob = (CASE
+                      WHEN Pers.fldPersonTitleCode = 100 THEN
+                          2
+                      ELSE
+                          1
+                  END
+                 ),                                                                                                        -- buyer type {1 haghighi 2 hoghoghi 3 madani 4 Atba 5 MasrafKonande}
+                                                                                                                           --Bid = (CASE
+                                                                                                                           --           WHEN Pers.fldPersonTitleCode = 1 THEN
+                                                                                                                           --               CONVERT(NVARCHAR(30), Pers.fldCodeMelli)
+                                                                                                                           --           ELSE
+                                                                                                                           --               ''
+                                                                                                                           --       END
+                                                                                                                           --      ),
+           Tinb = (CASE
+                       WHEN Pers.fldPersonTitleCode = 100 THEN
+                           CONVERT(NVARCHAR(30), ISNULL(Pers.fldBirthCertificateNo, Pers.fldCodeMelli))
+                       ELSE
+                           NULL
+                   END
+                  ),
+           Bid = (CASE
+                      WHEN Pers.fldPersonTitleCode = 100 THEN
+                          NULL
+                      ELSE
+                          Pers.fldCodeMelli
+                  END
+                 ),
+           Sbc = '0',
+           Bpc = '0',
+           Bbc = '0',
+           Ft = 0,
+                                                                                                                           --Bpn = '0',
+           Scln = '0',
+           Scc = '0',
+           Crn = '0',
+           Billid = '0',
+           Tprdis = CONVERT(DECIMAL(18, 0), SUM((CI.Fee * CI.Qty)) OVER (PARTITION BY FT.fldID)),                          /*مجموع مبلغ قبل از تخفیف */
+           Tdis = CONVERT(DECIMAL(18, 0), SUM(CI.Discount) OVER (PARTITION BY FT.fldID), 0),                               --مجموع تخفیف
+           Tadis = CONVERT(DECIMAL(18, 0), SUM(CI.FullPrice - CI.Discount) OVER (PARTITION BY FT.fldID), 0),               --مجموع مبلغ پس از تخفیف
+           Tvam = CONVERT(DECIMAL(18, 0), SUM(CI.TaxPrice) OVER (PARTITION BY FT.fldID), 0),                               --مجموع مالیات و ارزش افزوده
+           Todam = CONVERT(DECIMAL, 0),
+           Tbill = CONVERT(DECIMAL(18, 0), SUM(CI.FullPrice - CI.Discount + CI.TaxPrice) OVER (PARTITION BY FT.fldID), 0), --مجموع صورتحساب
+           Setm = 1,
+           Cap = CONVERT(DECIMAL(18, 0), SUM(CI.FullPrice - CI.Discount) OVER (PARTITION BY FT.fldID), 0),                 -- مبلغ پرداخت نقدی
+
+           Insp = CONVERT(DECIMAL, 0),
+           Tvop = CONVERT(DECIMAL, 0),                                                                                     --مجموع مالیات و ارزش افزوده
+           Tax17 = CONVERT(DECIMAL, 0),
+           Cdcn = '',
+           Cdcd = 0,
+           Tonw = CONVERT(DECIMAL, 0),
+           Torv = CONVERT(DECIMAL, 0),
+           Tocv = CONVERT(DECIMAL, 0),
+           GETDATE() [date]
+    INTO #tmp
+    FROM Sales.tbl_FactorTitle AS FT
+        INNER JOIN Sales.tbl_FactorRow AS FTR
+            ON FT.fldID = FTR.fldFactorID
+        INNER JOIN #tmpCalcItems CI
+            ON FTR.fldID = CI.fldID
+        INNER JOIN Common.tbl_CodingComponents P
+            ON FT.fldCustomerID = P.fldformGeneratorID
+        INNER JOIN Common.tbl_Persons Pers
+            ON P.fldformGeneratorID = Pers.fldID
+        LEFT JOIN Common.tbl_CodingComponentItem CItm
+            ON FTR.fldItemID = CItm.fldformGeneratorID
+    WHERE FT.fldID = @InvoiceId
+    ORDER BY FT.fldDate;
+
+    --INSERT INTO TaxGovermentInoiceHeaderLog
+    --SELECT *
+    --FROM #tmp;
+
+    SELECT *
+    FROM #tmp;
+    DROP TABLE #tmp;
+
+
+
+END;
+/*
+EXEC [dbo].[TaxGovermentGetInvoiceHeaderForSend]
+EXEC [dbo].[TaxGovermentGetInvoiceDetailForSend]'18E45F38-4D91-98E2-0D49-31D14919498D'
+*/
+GO
+/****** Object:  StoredProcedure [dbo].[TaxGovermentInvoiceFinalInsertUpdate]    Script Date: 11/6/2023 2:59:13 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[TaxGovermentInvoiceFinalInsertUpdate]
+    @InvoiceId NVARCHAR(50),
+    @LastStatus NVARCHAR(100),
+    @Done BIT,
+    @TaxId NVARCHAR(100),
+    @LastRefrenceId NVARCHAR(50),
+	@Cancel bit = 0
+AS
+BEGIN
+
+    SET NOCOUNT ON;
+	IF @Cancel = 1
+	Begin
+		Delete From [dbo].[TaxGovermentInvoiceFinal] WHere InvoiceId = @InvoiceId + '#R'
+		INSERT INTO [dbo].[TaxGovermentInvoiceFinal]
+            (
+                InvoiceId,
+                LastStatus,
+                Done,
+                TaxId,
+                LastRefrenceId,
+                LastResponseCheckTime
+            )
+            SELECT @InvoiceId + '#R',
+                   'Cancel',
+                   @Done,
+                   @TaxId,
+                   @LastRefrenceId,
+                   GETDATE();
+			UPDATE [dbo].[TaxGovermentInvoiceFinal]
+					SET LastStatus = 'Cancel',
+						Done = @Done,
+						LastRefrenceId = @LastRefrenceId,
+						LastResponseCheckTime = GETDATE()
+					WHERE InvoiceId = @InvoiceId;
+	End
+	Else
+	Begin
+		IF @InvoiceId IS NULL
+       OR @InvoiceId = ''
+       OR LEN(@InvoiceId) = 0
+    BEGIN
+		PRINT'InvoiceId IS NULL'
+        UPDATE [dbo].[TaxGovermentInvoiceFinal]
+        SET LastStatus = @LastStatus,
+            Done = @Done,
+            LastRefrenceId = @LastRefrenceId,
+			LastResponseCheckTime = GETDATE()
+        WHERE LastRefrenceId = @LastRefrenceId;
+    END;
+    ELSE
+    BEGIN
+        IF NOT EXISTS
+        (
+            SELECT InvoiceId
+            FROM [dbo].[TaxGovermentInvoiceFinal]
+            WHERE InvoiceId = @InvoiceId
+        )
+        BEGIN
+            PRINT 'Insert';
+            INSERT INTO [dbo].[TaxGovermentInvoiceFinal]
+            (
+                InvoiceId,
+                LastStatus,
+                Done,
+                TaxId,
+                LastRefrenceId,
+                LastResponseCheckTime
+            )
+            SELECT @InvoiceId,
+                   @LastStatus,
+                   @Done,
+                   @TaxId,
+                   @LastRefrenceId,
+                   GETDATE();
+        END;
+        ELSE
+            PRINT 'Update';
+        UPDATE [dbo].[TaxGovermentInvoiceFinal]
+        SET LastStatus = @LastStatus,
+            Done = @Done,
+            LastRefrenceId = @LastRefrenceId,
+            TaxId = @TaxId,
+            LastResponseCheckTime = GETDATE()
+        WHERE InvoiceId = @InvoiceId;
+    END;
+	ENd
+END;
+
+GO
+/****** Object:  StoredProcedure [dbo].[TaxGovermentLastRefrenceId]    Script Date: 11/6/2023 2:59:13 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[TaxGovermentLastRefrenceId]
+AS
+BEGIN
+    DECLARE @time INT;
+    SELECT @time = ISNULL(ResponseCheckerTimeInSec, 300)
+    FROM dbo.TaxGovermentSettingInfo;
+
+    SELECT TOP 1
+           LastRefrenceId
+    FROM dbo.TaxGovermentInvoiceFinal
+    WHERE LOWER(LastStatus) IN ( 'pending', 'sent' )
+          AND
+          (
+              DATEADD(SECOND, @time, LastResponseCheckTime) < GETDATE()
+              OR LastResponseCheckTime IS NULL
+          );
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[TaxGovermentSaveInvoiceInsert]    Script Date: 11/6/2023 2:59:13 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[TaxGovermentSaveInvoiceInsert]
+@InvoiceId uniqueidentifier,@ReferenceNumber nvarchar(100),@Status nvarchar(50),@InvoiceUniqueId nvarchar(100),@UId nvarchar(100)
+AS
+BEGIN
+	
+	SET NOCOUNT ON;
+	If Not Exists(Select InvoiceId From [dbo].[TaxGovermentInvoiceInfo] Where InvoiceId = @InvoiceId) or 1 = 1 
+	Begin
+		Insert Into [dbo].[TaxGovermentInvoiceInfo](InvoiceId,ReferenceNumber,[Status],InvoiceUniqueId,UId)
+			Select @InvoiceId,@ReferenceNumber,@Status,@InvoiceUniqueId,@UId
+	End
+	--Else
+	--Begin 
+	--	Update [dbo].[TaxGovermentInvoiceInfo] Set ReferenceNumber = @ReferenceNumber,UId = @UId   Where InvoiceId = @InvoiceId
+	--End
+END
+
+GO
+/****** Object:  StoredProcedure [dbo].[TaxGovermentSaveInvoiceLogInsert]    Script Date: 11/6/2023 2:59:13 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[TaxGovermentSaveInvoiceLogInsert]
+@ReferenceNumber nvarchar(100),@Status nvarchar(50),@UId nvarchar(100),@Data nvarchar(Max),@PacketType nvarchar(50)
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	Declare @TaxGovermentInvoiceInfoId bigint;
+	Select @TaxGovermentInvoiceInfoId = TaxGovermentInvoiceInfoId From [dbo].[TaxGovermentInvoiceInfo] Where ReferenceNumber = @ReferenceNumber;
+
+	Insert Into [dbo].[TaxGovermentSendLog](TaxGovermentInvoiceInfoId,RefrenceId,[Status],[UId],[Date],Json,PacketType)
+		Select @TaxGovermentInvoiceInfoId,@ReferenceNumber,@Status,@UId,Getdate(),@Data,@PacketType
+END
+
+GO

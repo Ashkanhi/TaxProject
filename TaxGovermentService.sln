@@ -1,0 +1,97 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33403.182
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestTemp", "TestTemp\TestTemp.csproj", "{EA561176-7696-40BA-9A4F-C3429F9242D1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NPSServiceWatcher", "NPSServiceWatcher\NPSServiceWatcher.csproj", "{42E09EEE-76B9-4C98-B74D-9760D04D97A7}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TaxWebAppCore8", "TaxWebAppCore8\TaxWebAppCore8.csproj", "{729D96EC-E7F3-4E93-A9F2-4D699FCAFB06}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ClsTools", "ClsTools\ClsTools.csproj", "{EE1AB143-1C86-4789-B675-CA699CF696C7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NPSTools", "NPSTools\NPSTools.csproj", "{2F6D89AE-8B49-4C5D-99C9-942A99B03918}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApplication1", "WebApplication1\WebApplication1.csproj", "{62C27898-B35C-41A6-8F01-CE5FB413CE00}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "7ZipLib", "7ZipLib\7ZipLib.csproj", "{DDEA7ACA-6862-4020-81CE-B9828FD6BB59}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RabbitTestWinApp", "RabbitTestWinApp\RabbitTestWinApp.csproj", "{863BC324-7079-422F-93BA-8563D0FB553B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EA561176-7696-40BA-9A4F-C3429F9242D1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EA561176-7696-40BA-9A4F-C3429F9242D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EA561176-7696-40BA-9A4F-C3429F9242D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EA561176-7696-40BA-9A4F-C3429F9242D1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{42E09EEE-76B9-4C98-B74D-9760D04D97A7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{42E09EEE-76B9-4C98-B74D-9760D04D97A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{42E09EEE-76B9-4C98-B74D-9760D04D97A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{42E09EEE-76B9-4C98-B74D-9760D04D97A7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{729D96EC-E7F3-4E93-A9F2-4D699FCAFB06}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{729D96EC-E7F3-4E93-A9F2-4D699FCAFB06}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{729D96EC-E7F3-4E93-A9F2-4D699FCAFB06}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{729D96EC-E7F3-4E93-A9F2-4D699FCAFB06}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EE1AB143-1C86-4789-B675-CA699CF696C7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE1AB143-1C86-4789-B675-CA699CF696C7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE1AB143-1C86-4789-B675-CA699CF696C7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE1AB143-1C86-4789-B675-CA699CF696C7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2F6D89AE-8B49-4C5D-99C9-942A99B03918}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2F6D89AE-8B49-4C5D-99C9-942A99B03918}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2F6D89AE-8B49-4C5D-99C9-942A99B03918}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2F6D89AE-8B49-4C5D-99C9-942A99B03918}.Release|Any CPU.Build.0 = Release|Any CPU
+		{62C27898-B35C-41A6-8F01-CE5FB413CE00}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{62C27898-B35C-41A6-8F01-CE5FB413CE00}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{62C27898-B35C-41A6-8F01-CE5FB413CE00}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{62C27898-B35C-41A6-8F01-CE5FB413CE00}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DDEA7ACA-6862-4020-81CE-B9828FD6BB59}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DDEA7ACA-6862-4020-81CE-B9828FD6BB59}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DDEA7ACA-6862-4020-81CE-B9828FD6BB59}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DDEA7ACA-6862-4020-81CE-B9828FD6BB59}.Release|Any CPU.Build.0 = Release|Any CPU
+		{863BC324-7079-422F-93BA-8563D0FB553B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{863BC324-7079-422F-93BA-8563D0FB553B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{863BC324-7079-422F-93BA-8563D0FB553B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{863BC324-7079-422F-93BA-8563D0FB553B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3AA8881F-3315-4B1C-92A6-DF12317F8907}
+	EndGlobalSection
+	GlobalSection(TeamFoundationVersionControl) = preSolution
+		SccNumberOfProjects = 9
+		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccTeamFoundationServer = http://10.15.20.244:8080/tfs/arghamnegarcollection
+		SccLocalPath0 = .
+		SccProjectUniqueName1 = ClsTools\\ClsTools.csproj
+		SccProjectName1 = ClsTools
+		SccLocalPath1 = ClsTools
+		SccProjectUniqueName2 = NPSServiceWatcher\\NPSServiceWatcher.csproj
+		SccProjectName2 = NPSServiceWatcher
+		SccLocalPath2 = NPSServiceWatcher
+		SccProjectUniqueName3 = NPSTools\\NPSTools.csproj
+		SccProjectName3 = NPSTools
+		SccLocalPath3 = NPSTools
+		SccProjectUniqueName4 = TaxWebAppCore8\\TaxWebAppCore8.csproj
+		SccProjectName4 = TaxWebAppCore8
+		SccLocalPath4 = TaxWebAppCore8
+		SccProjectUniqueName5 = TestTemp\\TestTemp.csproj
+		SccProjectName5 = TestTemp
+		SccLocalPath5 = TestTemp
+		SccProjectUniqueName6 = WebApplication1\\WebApplication1.csproj
+		SccProjectName6 = WebApplication1
+		SccLocalPath6 = WebApplication1
+		SccProjectUniqueName7 = 7ZipLib\\7ZipLib.csproj
+		SccProjectName7 = 7ZipLib
+		SccLocalPath7 = 7ZipLib
+		SccProjectUniqueName8 = RabbitTestWinApp\\RabbitTestWinApp.csproj
+		SccProjectName8 = RabbitTestWinApp
+		SccLocalPath8 = RabbitTestWinApp
+	EndGlobalSection
+EndGlobal
