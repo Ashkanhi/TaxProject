@@ -62,7 +62,7 @@ namespace TaxServiceAndApp.BI
             else return (await _tissServise.GetAllInvoice(search));
         }
         public static async Task<List<GeneralInvoiceHeaderViewModel>> 
-            GetAllInvoiceWithInqFromServerAsync(SearchParameters search)
+            GetAllInvoiceWithInqFromServerAsync(SearchParameters search, string? operationId = null)
         {
             await InitAsync();
             if (SrvInfo.ServiceType.ToLower() == "Tax".ToLower())
@@ -70,7 +70,7 @@ namespace TaxServiceAndApp.BI
             else if (SrvInfo.ServiceType.ToLower() == "Rima".ToLower())
                 return (await _rimaService.GetAllInvoiceByInqFromServer(search));
             else if (SrvInfo.ServiceType.ToLower() == "RimaCalculate".ToLower())
-                return (await _rimaCalcService.GetAllInvoiceByInqFromServer(search));
+                return (await _rimaCalcService.GetAllInvoiceByInqFromServer(search, operationId));
             else return (await _tissServise.GetAllInvoiceByInqFromServer(search));
         }
 
@@ -147,7 +147,7 @@ namespace TaxServiceAndApp.BI
               + " InitAsync ::" + ex.Message + "::" + ex?.InnerException?.Message, ex);
             }
         }
-        public static async Task<ResultModel> SendGroupInvoicesAsync(List<DTOInvoiceLimitParameter> Ids)
+        public static async Task<ResultModel> SendGroupInvoicesAsync(List<DTOInvoiceLimitParameter> Ids, string? operationId = null)
         {
             await InitAsync();
             if (SrvInfo.ServiceType.ToLower() == "Tax".ToLower())
@@ -155,7 +155,7 @@ namespace TaxServiceAndApp.BI
             else if (SrvInfo.ServiceType.ToLower() == "Rima".ToLower())
                 return await _rimaService.SendGroupInvoicesForGroupingAsync(Ids);
             else if (SrvInfo.ServiceType.ToLower() == "RimaCalculate".ToLower())
-                return await _rimaCalcService.SendGroupInvoicesForGroupingAsync(Ids);
+                return await _rimaCalcService.SendGroupInvoicesForGroupingAsync(Ids, operationId);
             else return await _tissServise.SendGroupInvoicesForGroupingAsync(Ids);
         }
 

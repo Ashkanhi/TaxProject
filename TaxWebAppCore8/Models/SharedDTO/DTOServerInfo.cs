@@ -23,6 +23,13 @@ namespace TaxServiceAndApp.Models.SharedDTO
 
 
         [DataMember] public string API_URL { get; set; }
+        [DataMember] public string OMID_API_URL { get; set; }
+        [DataMember] public string OMID_API_KEY { get; set; }
+        [DataMember] public string OMID_API_SECRET { get; set; }
+        [DataMember] public string OMID_AES_KEY_BASE64 { get; set; }
+        [DataMember] public string OMID_AES_IV_BASE64 { get; set; }
+        [DataMember] public string OMID_USERNAME { get; set; }
+        [DataMember] public string OMID_PASSWORD { get; set; }
         [DataMember] public string FILE_KEY_PRIVATE { get; set; }
         [DataMember] public string FILE_CERTIFICATE { get; set; }
         [DataMember] public string TINS { get; set; }

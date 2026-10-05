@@ -35,6 +35,21 @@ namespace TaxWebAppCore8.Controllers
             _webHostEnvironment = webHostEnvironment;
         }
 
+        private static string GetPersianUserError(Exception exception, string operationTitle)
+        {
+            if (exception is UriFormatException ||
+                exception.Message.Contains("Invalid URI", StringComparison.OrdinalIgnoreCase) ||
+                exception.Message.Contains("hostname could not be parsed", StringComparison.OrdinalIgnoreCase))
+            {
+                return "آدرس سرویس ریما در تنظیمات معتبر نیست. لطفاً تنظیم API_URL بررسی شود.";
+            }
+
+            if (exception is TaskCanceledException)
+                return $"زمان انتظار برای {operationTitle} به پایان رسید. لطفاً دوباره تلاش کنید.";
+
+            return $"در {operationTitle} خطای داخلی رخ داد. جزئیات فنی در گزارش سیستم ثبت شد.";
+        }
+
         public ActionResult Index()
         {
 
@@ -231,7 +246,7 @@ namespace TaxWebAppCore8.Controllers
         //    }
         //}
         [HttpPost]
-        public async Task<ActionResult> SendGroupingInvoice(List<DTOInvoiceLimitParameter> stringList, int SumCount,int batchSize)
+        public async Task<ActionResult> SendGroupingInvoice(List<DTOInvoiceLimitParameter> stringList, int SumCount, int batchSize, string? operationId)
         {
             try
             {
@@ -252,7 +267,12 @@ namespace TaxWebAppCore8.Controllers
                  (ClsTools.Logger.ModuleName.ArghamCompany_TaxGoverment).
                LogInfoMessage($"BaranDB:{MethodBase.GetCurrentMethod().DeclaringType.Name}::"
            + " clientIpAddress ::" + clientIpAddress);
-                string sessionKey = $"CollectDatas_{clientIpAddress}";
+                // هر ارسال گروهی فضای جمع‌آوری جداگانه دارد؛ دو tab یا دو کاربر پشت یک IP
+                // نباید batchهای یکدیگر را در Session ادغام کنند.
+                string sessionScope = string.IsNullOrWhiteSpace(operationId)
+                    ? clientIpAddress
+                    : $"{clientIpAddress}_{operationId}";
+                string sessionKey = $"CollectDatas_{sessionScope}";
                 ClsTools.Logger.NPSLogger.GetLogger
                 (ClsTools.Logger.ModuleName.ArghamCompany_TaxGoverment).
               LogInfoMessage($"BaranDB:{MethodBase.GetCurrentMethod().DeclaringType.Name}::"
@@ -296,7 +316,7 @@ namespace TaxWebAppCore8.Controllers
 
                     if (collect.Count > 0)
                     {
-                        var res = await BMain.SendGroupInvoicesAsync(collect);
+                        var res = await BMain.SendGroupInvoicesAsync(collect, operationId);
                         if (res.Success)
                         {
                             return Json(new { success = true, res = res, countOfSend = res.Count });
@@ -332,7 +352,7 @@ namespace TaxWebAppCore8.Controllers
                    + " ExecCommandToObject ::" + ex.Message + "::" + ex?.InnerException?.Message, ex);
                 // Log the exception for debugging
                 Console.WriteLine(ex.Message);
-                return Json(new { message = ex.Message, success = false });
+                return Json(new { message = GetPersianUserError(ex, "ارسال گروهی فاکتورها"), success = false });
             }
         }
         [HttpPost]
@@ -438,7 +458,7 @@ namespace TaxWebAppCore8.Controllers
         }
         [HttpPost]
 
-        public async Task<ActionResult> GetAllInvoiceInExcel(SearchParameters searchFilter)
+        public async Task<ActionResult> GetAllInvoiceInExcel(SearchParameters searchFilter, string? operationId)
         {
             try
             {
@@ -487,14 +507,24 @@ namespace TaxWebAppCore8.Controllers
                             var ItemsOfFactor = BMain.GetAllTissInfoItems(Guid.Parse(playObject.InvoiceId), playObject.StoreID.Value,
                                 playObject.BookerWorkstationID.Value);
 
+                            countofSend++;
                             var message =
                                      "\r\n تعداد : " + countofSend +
                                     " از " + countofAll;
 
-                            await BMain._hubContext.Clients.All.SendAsync("SendToTaxExcel", message);
-
-                            countofSend++;
-
+                            var progressClients = string.IsNullOrWhiteSpace(operationId)
+                                ? BMain._hubContext.Clients.All
+                                : BMain._hubContext.Clients.Group(operationId);
+                            await progressClients.SendAsync("SendToTaxExcel", new
+                            {
+                                operationId,
+                                message,
+                                processed = countofSend,
+                                total = countofAll,
+                                succeeded = countofSend,
+                                failed = 0,
+                                completed = countofSend == countofAll
+                            });
 
                             if (ItemsOfFactor == null) continue;
                             j++;
@@ -702,7 +732,7 @@ namespace TaxWebAppCore8.Controllers
 
         [HttpPost]
 
-        public async Task<ActionResult> GetAllInvoiceInExcelSummary(SearchParameters searchFilter)
+        public async Task<ActionResult> GetAllInvoiceInExcelSummary(SearchParameters searchFilter, string? operationId)
         {
             try
             {
@@ -761,14 +791,24 @@ namespace TaxWebAppCore8.Controllers
                             var ItemsOfFactor = BMain.GetAllTissInfoItems(Guid.Parse(playObject.InvoiceId), playObject.StoreID.Value,
                                 playObject.BookerWorkstationID.Value);
 
+                            countofSend++;
                             var message =
                                      "\r\n تعداد : " + countofSend +
                                     " از " + countofAll;
 
-                            await BMain._hubContext.Clients.All.SendAsync("SendToTaxExcel", message);
-
-                            countofSend++;
-
+                            var progressClients = string.IsNullOrWhiteSpace(operationId)
+                                ? BMain._hubContext.Clients.All
+                                : BMain._hubContext.Clients.Group(operationId);
+                            await progressClients.SendAsync("SendToTaxExcel", new
+                            {
+                                operationId,
+                                message,
+                                processed = countofSend,
+                                total = countofAll,
+                                succeeded = countofSend,
+                                failed = 0,
+                                completed = countofSend == countofAll
+                            });
 
                             if (ItemsOfFactor == null) continue;
 
@@ -955,11 +995,11 @@ namespace TaxWebAppCore8.Controllers
 
 
         [HttpPost]
-        public async Task<ActionResult> GetAllInvoiceWithInqFromServerInExcel(SearchParameters searchFilter)
+        public async Task<ActionResult> GetAllInvoiceWithInqFromServerInExcel(SearchParameters searchFilter, string? operationId)
         {
             try
             {
-                var list = await BMain.GetAllInvoiceWithInqFromServerAsync(searchFilter);
+                var list = await BMain.GetAllInvoiceWithInqFromServerAsync(searchFilter, operationId);
                 if (list != null)
                 {
                     string filename = "گزارش استعلام فاکتورها" + DateTime.Now.Millisecond + ".xlsx";
@@ -993,6 +1033,8 @@ namespace TaxWebAppCore8.Controllers
                         sheet.Cells[j, 6].Value = "مبلغ تخفیف";
                         sheet.Cells[j, 7].Value = "مبلغ خالص(ریال)";
                         sheet.Cells[j, 8].Value = "مالیات";
+                        sheet.Cells[j, 9].Value = "منبع وضعیت";
+                        sheet.Cells[j, 10].Value = "شرح استعلام";
 
                         sheet.Row(1).Style.Fill.PatternType = ExcelFillStyle.Solid;
                         sheet.Row(1).Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.DarkSlateBlue);
@@ -1005,13 +1047,24 @@ namespace TaxWebAppCore8.Controllers
                         {
                             var ItemsOfFactor = BMain.GetAllTissInfoItems(Guid.Parse(playObject.InvoiceId), playObject.StoreID.Value,
                                                            playObject.BookerWorkstationID.Value);
+                            countofSend++;
                             var message =
                                     "\r\n تعداد : " + countofSend +
                                    " از " + countofAll;
 
-                            await BMain._hubContext.Clients.All.SendAsync("SendToTaxExcel", message);
-                            countofSend++;
-
+                            var progressClients = string.IsNullOrWhiteSpace(operationId)
+                                ? BMain._hubContext.Clients.All
+                                : BMain._hubContext.Clients.Group(operationId);
+                            await progressClients.SendAsync("SendToTaxExcel", new
+                            {
+                                operationId,
+                                message,
+                                processed = countofSend,
+                                total = countofAll,
+                                succeeded = countofSend,
+                                failed = 0,
+                                completed = countofSend == countofAll
+                            });
                             j++;
                             sheet.Cells[j, 1].Value = playObject.RealInvoiceNumber;
                             sheet.Cells[j, 2].Value = playObject.SendStatStr;
@@ -1021,6 +1074,10 @@ namespace TaxWebAppCore8.Controllers
                             sheet.Cells[j, 6].Value = playObject.TotalDiscount;
                             sheet.Cells[j, 7].Value = playObject.NetPriceWithSeperator;
                             sheet.Cells[j, 8].Value = playObject.TotalTax;
+                            sheet.Cells[j, 9].Value = playObject.InquirySource;
+                            sheet.Cells[j, 10].Value = playObject.InquiryFailed
+                                ? "استعلام ناموفق: " + playObject.InqMessage
+                                : playObject.InqMessage;
 
                             sheet.Row(j).Style.Fill.PatternType = ExcelFillStyle.Solid;
                             sheet.Row(j).Style.Font.Bold = true;
@@ -1053,7 +1110,7 @@ namespace TaxWebAppCore8.Controllers
                             sheet.Row(j).Style.Font.Bold = true;
                             sheet.Row(j).Style.Font.Size = 13;
 
-                            sheet.Cells[j, 1, j, 9].Merge = true; // Merging cells A1 to H1
+                            sheet.Cells[j, 1, j, 10].Merge = true;
                             sheet.Cells[j, 1].Value = "نتیجه ارسال: " + playObject.fListOfErrorCaption + "(" + playObject.InvoiceDescription + ")";
 
                             j++;
@@ -1216,16 +1273,18 @@ namespace TaxWebAppCore8.Controllers
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = ex.Message });
+                ClsTools.Logger.NPSLogger.GetLogger(ClsTools.Logger.ModuleName.ArghamCompany_TaxGoverment)
+                    .LogError($"::{MethodBase.GetCurrentMethod().DeclaringType.Name}::GetAllInvoiceWithInqFromServerInExcel::{ex.Message}", ex);
+                return Json(new { success = false, message = GetPersianUserError(ex, "تهیه خروجی Excel استعلام") });
             }
         }
         [HttpPost]
 
-        public async Task<ActionResult> GetAllInvoiceWithInqFromServer(SearchParameters searchFilter)
+        public async Task<ActionResult> GetAllInvoiceWithInqFromServer(SearchParameters searchFilter, string? operationId)
         {
             try
             {
-                var list = await BMain.GetAllInvoiceWithInqFromServerAsync(searchFilter);
+                var list = await BMain.GetAllInvoiceWithInqFromServerAsync(searchFilter, operationId);
                 var SendSuccess = list.Where(a => a.fSendState == 4).ToList();
 
                 var result = Json(new
@@ -1239,7 +1298,9 @@ namespace TaxWebAppCore8.Controllers
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = ex.Message });
+                ClsTools.Logger.NPSLogger.GetLogger(ClsTools.Logger.ModuleName.ArghamCompany_TaxGoverment)
+                    .LogError($"::{MethodBase.GetCurrentMethod().DeclaringType.Name}::GetAllInvoiceWithInqFromServer::{ex.Message}", ex);
+                return Json(new { success = false, message = GetPersianUserError(ex, "استعلام فاکتورها") });
             }
         }
 

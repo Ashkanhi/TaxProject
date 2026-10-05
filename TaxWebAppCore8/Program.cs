@@ -1,94 +1,94 @@
-﻿using Microsoft.AspNetCore.SignalR;
-using TaxServiceAndApp.BI;
-using TaxWebAppCore8.BI.MessagingService;
-using Quartz;
-using Quartz.Impl;
-using Quartz.Spi;
-using TaxWebAppCore8.BI;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Caching.Distributed;
-using TaxCollectData.Library.Dto;
+using Quartz;
+using TaxServiceAndApp.BI;
+using TaxWebAppCore8.BI;
+using TaxWebAppCore8.BI.MessagingService;
+using TaxWebAppCore8.BI.Omid;
+using TaxWebAppCore8.Models.DBContextMedels;
 using TaxWebAppCore8.Models.SharedDTO.BaranDB;
-using System.Text.Json;
-using StackExchange.Redis;
-using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
-BMain.ServerResourcesPath = Path.Combine(AppContext.BaseDirectory, "Resources");
+// تعیین مسیر فایل‌های موردنیاز سرویس‌های فعلی.
+BMain.ServerResourcesPath = Path.Combine(
+    AppContext.BaseDirectory,
+    "Resources");
 
+// راه‌اندازی منطق فعلی برنامه و بررسی اشیای موردنیاز دیتابیس.
 BMain bmain = new BMain();
+DatabaseStartupInitializer.EnsureRequiredObjects(BMain.SrvInfo.DBConn);
 
-// Add services to the container.
-builder.Services.AddControllersWithViews().AddRazorRuntimeCompilation();
-
-
-// Add required services
-builder.Services.AddSingleton<IWebHostEnvironment>(builder.Environment); // For IWebHostEnvironment
-
-// Middleware configuration...
-builder.Services.AddSignalR();
-builder.Services.AddControllers()
+// ثبت کنترلرها و Viewها و فعال‌سازی کامپایل Razor در زمان اجرا.
+// نام خصوصیات در پاسخ JSON بدون تغییر باقی می‌ماند.
+builder.Services
+    .AddControllersWithViews()
+    .AddRazorRuntimeCompilation()
     .AddJsonOptions(options =>
     {
-        options.JsonSerializerOptions.PropertyNamingPolicy = null; // Retain original property names
+        options.JsonSerializerOptions.PropertyNamingPolicy = null;
     });
 
+// ثبت SignalR برای ارتباط لحظه‌ای با مرورگر.
+builder.Services.AddSignalR();
 
-
-
-
-builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
-builder.Services.AddTransient<IEmailSender, EmailSender>();
+// فراهم‌کردن دسترسی سرویس‌ها به درخواست HTTP جاری.
 builder.Services.AddHttpContextAccessor();
-// Add Quartz
+
+// خواندن تنظیمات ایمیل و ثبت سرویس ارسال ایمیل.
+builder.Services.Configure<SmtpSettings>(
+    builder.Configuration.GetSection("SmtpSettings"));
+
+builder.Services.AddTransient<IEmailSender, EmailSender>();
+
+// خواندن بخش Omid از تنظیمات و اتصال آن به کلاس OmidConfig.
+builder.Services.Configure<OmidConfig>(
+    builder.Configuration.GetSection(OmidConfig.SectionName));
+
+// ثبت کلاینت ارتباط با امید.
+// HttpClientFactory منابع ارتباطی این کلاینت را مدیریت می‌کند.
+// این ثبت به‌تنهایی هیچ درخواستی به امید ارسال نمی‌کند.
+builder.Services.AddHttpClient<OmidApiClient>();
+
+// ثبت کارهای زمان‌بندی‌شده برنامه.
 builder.Services.AddQuartz(q =>
 {
     q.UseMicrosoftDependencyInjectionJobFactory();
 
-    var jobKey = new JobKey("MonthlyEmailJob");
-    q.AddJob<MonthlyEmailJob>(opts => opts.WithIdentity(jobKey));
+    // اجرای کار ارسال ایمیل، هر دوشنبه ساعت ۱۲ ظهر.
+    var emailJobKey = new JobKey("MonthlyEmailJob");
+
+    q.AddJob<MonthlyEmailJob>(opts =>
+        opts.WithIdentity(emailJobKey));
 
     q.AddTrigger(opts => opts
-        .ForJob(jobKey)
+        .ForJob(emailJobKey)
         .WithIdentity("WeeklyEmailTrigger")
-        .WithCronSchedule("0 0 12 ? * MON *"));  // Runs every Monday at noon
-});
+        .WithCronSchedule("0 0 12 ? * MON *"));
 
-builder.Services.AddQuartz(q =>
-{
-    var jobKey = new JobKey("NightlyJob");
-q.AddJob<NightlyJob>(opts => opts.WithIdentity(jobKey));
+    // اجرای کار روزانه در ساعت ۶ صبح.
+    // این ساعت مطابق عبارت Cron موجود در کد قبلی است.
+    var nightlyJobKey = new JobKey("NightlyJob");
 
-q.AddTrigger(opts => opts
-        .ForJob(jobKey)
+    q.AddJob<NightlyJob>(opts =>
+        opts.WithIdentity(nightlyJobKey));
+
+    q.AddTrigger(opts => opts
+        .ForJob(nightlyJobKey)
         .WithIdentity("NightlyJob-trigger")
-        .WithCronSchedule("0 0 6 * * ?")); // Cron expression for 5 PM every day
-                                            
+        .WithCronSchedule("0 0 6 * * ?"));
 });
-//builder.Services.AddQuartz(q =>
-//{
-//    var jobKey = new JobKey("NightlyJob");
-//    q.AddJob<NightlyJob>(opts => opts.WithIdentity(jobKey));
 
-//    // Create a trigger to run the job one minute after application starts
-//    q.AddTrigger(opts => opts
-//        .ForJob(jobKey)
-//        .WithIdentity("OneMinuteTrigger")
-//        .StartAt(DateTimeOffset.UtcNow.AddMinutes(1)) // Start in one minute
-//        .WithSimpleSchedule(x => x.WithInterval(TimeSpan.FromMinutes(1)).WithRepeatCount(0)) // Run once
-//    );
-//});
-builder.Services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
-builder.Services.AddSession(options =>
+// اجرای Quartz همراه برنامه.
+// هنگام توقف برنامه، منتظر پایان کارهای در حال اجرا می‌ماند.
+builder.Services.AddQuartzHostedService(options =>
 {
-    options.IdleTimeout = TimeSpan.FromMinutes(60);
-    options.Cookie.HttpOnly = true;
-    options.Cookie.IsEssential = true;
+    options.WaitForJobsToComplete = true;
 });
 
-// In Program.cs or Startup.cs
-
+// ثبت Session با زمان انقضای ۳۰ دقیقه عدم فعالیت.
+// این مقدار، همان مقدار مؤثر ثبت دوم در کد قبلی است.
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(30);
@@ -97,36 +97,44 @@ builder.Services.AddSession(options =>
     options.Cookie.SameSite = SameSiteMode.Lax;
 });
 
-// In Configure section:
-
-
-
+// ساخت برنامه پس از تکمیل ثبت سرویس‌ها.
 var app = builder.Build();
-app.UseAuthentication();
-app.MapControllers();
-// Configure the HTTP request pipeline.
+
+// تنظیم مدیریت خطا و HSTS در محیط عملیاتی.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
+// هدایت درخواست‌های HTTP به HTTPS و ارائه فایل‌های ثابت.
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
+// تعیین مسیر درخواست قبل از اجرای احراز هویت و مجوزها.
 app.UseRouting();
 
+// اجرای احراز هویت و بررسی مجوز دسترسی.
+app.UseAuthentication();
 app.UseAuthorization();
+
+// فعال‌سازی Session پیش از اجرای کنترلرها.
 app.UseSession();
-app.MapDefaultControllerRoute();
+
+// نگاشت کنترلرهایی که مسیر را با Attribute تعریف کرده‌اند.
+app.MapControllers();
+
+// مسیر پیش‌فرض صفحات برنامه.
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/");
 
+// مسیر ارتباط SignalR.
 app.MapHub<RequestsHub>("/RequestsHub");
 
-BMain._hubContext = app.Services.GetRequiredService<IHubContext<RequestsHub>>();
+// قراردادن ابزار ارسال پیام SignalR در اختیار منطق فعلی برنامه.
+BMain._hubContext =
+    app.Services.GetRequiredService<IHubContext<RequestsHub>>();
 
-
+// شروع اجرای برنامه.
 app.Run();

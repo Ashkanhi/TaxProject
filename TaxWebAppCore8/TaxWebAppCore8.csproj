@@ -15,6 +15,7 @@
 		<FileVersion>2.0.0</FileVersion>
 		<PlatformTarget>x64</PlatformTarget>
 		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+		<UserSecretsId>ea0ff1dc-dbb7-4304-8abd-910dea068e12</UserSecretsId>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -10209,7 +10210,7 @@
 		<PackageReference Include="System.Data.SQLite.EF6" Version="1.0.118" />
 		<PackageReference Include="System.Data.SQLite.Linq" Version="1.0.118" />
 		<PackageReference Include="System.Text.Json" Version="8.0.4" />
-		<PackageReference Include="TaxCollectData.Library" Version="2.0.22" />
+		<PackageReference Include="TaxCollectData.Library" Version="2.0.14" />
 	</ItemGroup>
 
 	<ItemGroup>

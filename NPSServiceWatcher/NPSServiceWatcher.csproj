@@ -69,5 +69,11 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NPSTools\NPSTools.csproj">
+      <Project>{2f6d89ae-8b49-4c5d-99c9-942a99b03918}</Project>
+      <Name>NPSTools</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

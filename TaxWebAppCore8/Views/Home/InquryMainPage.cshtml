@@ -362,6 +362,17 @@
                     </div>
                     <div class="row" id="waiting" style="text-align:center;display:none"><span style="color:red;">عملیات ممکن است طول بکشد لطفا صبر کنید</span></div>
 
+                    <div id="inquirySummary" class="alert alert-secondary" style="display:none; clear:both; margin-top:12px; direction:rtl;">
+                        <strong>خلاصه نتیجه:</strong>
+                        <span id="inquirySummaryTotal"></span>
+                        <span id="inquirySummarySuccess" style="margin-right:12px; color:#19733b"></span>
+                        <span id="inquirySummaryPending" style="margin-right:12px; color:#8a6d00"></span>
+                        <span id="inquirySummaryFailed" style="margin-right:12px; color:#a12622"></span>
+                        <span id="inquirySummaryUnsent" style="margin-right:12px"></span>
+                        <span id="inquirySummaryNoReference" style="margin-right:12px; color:#7a4e00"></span>
+                        <span id="inquirySummaryInquiryFailed" style="margin-right:12px; color:#a12622"></span>
+                    </div>
+
                 </form>
             </div>
             <div class="row">
@@ -383,22 +394,21 @@
                                 </caption>*@
                                 <thead>
                                     <tr>
-                                        @* <th>isSelected</th> *@
-                                        <th>sendStat</th>
-                                        <th>sendStat</th>
-                                        <th>Index</th>
-                                        <th>invoiceId</th>
-                                        <th>RealInvoiceNumber</th>
-                                        <th>persianCreateDate</th>
-                                      
-                                        <th>invoiceDescription</th>
-                                        <th>invoiceDescription</th>
-                                        <th>invoiceDescription</th>
-                                        <th>invoiceDescription</th>
-                                        <th>totalPrice</th>
-                                        <th>totalDiscount</th>
-                                        <th>netPrice</th>
-                                      
+                                        <th>اقلام</th>
+                                        <th>وضعیت سیستمی</th>
+                                        <th>ردیف</th>
+                                        <th>شناسه فاکتور</th>
+                                        <th>شعبه</th>
+                                        <th>شماره فاکتور</th>
+                                        <th>وضعیت</th>
+                                        <th>توضیح وضعیت</th>
+                                        <th>تاریخ ثبت</th>
+                                        <th>مشتری</th>
+                                        <th>منبع وضعیت</th>
+                                        <th>شرح استعلام</th>
+                                        <th>مبلغ خالص</th>
+                                        <th>مالیات</th>
+                                        <th>عملیات</th>
                                     </tr>
                                 </thead>
 
@@ -414,5 +424,6 @@
 
 
 @section js_UAGManagment {
-    <script src="~/Content/MyJS/Inqury.js"></script>
+    <script src="~/Content/MyJS/TaxOperationStatus.js" asp-append-version="true"></script>
+    <script src="~/Content/MyJS/Inqury.js" asp-append-version="true"></script>
 }

@@ -24,44 +24,11 @@ var ListOffAllInvoice = [];
 var FactorID;
 var connection1;
 
-// ===== کادر واحد «وضعیت زنده» =====
-// رفع باگ ماندگاری پیام‌ها (حذف setInterval تکرارشونده) و جلوگیری از نمایش روی‌هم پیام‌ها.
-// همه‌ی پیام‌های پیشرفت (بارگذاری/ارسال/استعلام/اکسل) در یک کادر واحد و به‌روزشونده نمایش داده می‌شوند.
-var liveStatusNotify = null;
-var liveStatusTimer = null;
-var LIVE_STATUS_IDLE_MS = 180000; // اگر تا ۳ دقیقه پیام جدیدی نیاید، کادر خودکار بسته می‌شود
 function showLiveStatus(title, text) {
-    try {
-        if (liveStatusTimer) { clearTimeout(liveStatusTimer); liveStatusTimer = null; }
-        var isOpen = liveStatusNotify && (liveStatusNotify.state === 'open' || liveStatusNotify.state === 'opening');
-        if (isOpen) {
-            liveStatusNotify.update({ title: title, text: text, type: 'success' });
-        } else {
-            liveStatusNotify = new PNotify({
-                title: title,
-                text: text,
-                type: 'success',
-                addclass: 'custom-blue-notification',
-                styling: 'bootstrap3',
-                hide: false,   // تا پایان کار باز می‌ماند (بدون تایمر تکرارشونده)
-                closer: true,  // دکمه بستن دستی
-                sticker: false,
-                width: '380px',
-                history: false
-            });
-        }
-        // پس از پایان کار (نیامدن پیام جدید) خودکار بسته می‌شود
-        liveStatusTimer = setTimeout(clearLiveStatus, LIVE_STATUS_IDLE_MS);
-    } catch (e) {
-        console.log('showLiveStatus:' + e);
-    }
+    TaxOperationStatus.update(title, text);
 }
 function clearLiveStatus() {
-    if (liveStatusTimer) { clearTimeout(liveStatusTimer); liveStatusTimer = null; }
-    if (liveStatusNotify) {
-        try { liveStatusNotify.remove(); } catch (e) { }
-        liveStatusNotify = null;
-    }
+    TaxOperationStatus.hide();
 }
 
 $(document).ready(function () {
@@ -88,7 +55,6 @@ $(document).ready(function () {
 
     connection1.on("SendToTaxEvents", function (data) {
         try {
-            setButtonsDesible(false);
             showNotification(data);
         } catch (e) {
             console.error(e);
@@ -96,7 +62,6 @@ $(document).ready(function () {
     });
     connection1.on("SendToTaxState", function (data) {
         try {
-            setButtonsDesible(false);
             showNotificationState(data);
         } catch (e) {
             console.error(e);
@@ -110,17 +75,7 @@ $(document).ready(function () {
 
     connection1.on("SendToTaxEventsError", function (data) {
         try {
-            setButtonsDesible(false);
-            //$('#waiting').hide();
-            // You can access the data object here
-            new PNotify({
-                title: 'استعلام با خطا',
-                text: data,
-                type: 'warning',
-                styling: 'bootstrap3',
-                closer: true, // Ensure the close button is enabled
-                sticker: false // Disable the sticker if you want to ensure it does not
-            });
+            TaxOperationStatus.fail('عملیات ناموفق', data);
         } catch (e) {
             console.error(e);
         }
@@ -242,7 +197,7 @@ function InitElemans() {
     }
 }
 
-function ExportExcelInq() {
+async function ExportExcelInq() {
     try {
         //var filter = CreateFilter();
         var filter = {};
@@ -254,12 +209,14 @@ function ExportExcelInq() {
 
         $('#waiting').show();
         setButtonsDesible(true);
+        var operationId = await TaxOperationStatus.begin(connection1, 'تهیه خروجی Excel استعلام', 0);
         $.ajax({
             url: '/SendInvoice/GetAllInvoiceWithInqFromServerInExcel', // Replace with your API endpoint
             //url: GETInviceListURL, // Replace with your API endpoint
             type: 'POST',
             data: {
-                searchFilter: filter
+                searchFilter: filter,
+                operationId: operationId
             }, // Send the InvoiceId to fetch items
             //data: { search: filter }, // Send the InvoiceId to fetch items
             success: function (data) {
@@ -268,12 +225,17 @@ function ExportExcelInq() {
 
                     file = data.Data;
                     window.location.href = "/Resources/FilesData" + "/" + file;
+                    TaxOperationStatus.complete('خروجی Excel آماده شد', {
+                        operationId: operationId,
+                        message: 'فایل گزارش استعلام آماده دانلود است.'
+                    });
 
                     $('#waiting').hide();
                     setButtonsDesible(false);
                     OnchangeStat();
                 } else {
                     console.log(data.message);
+                    TaxOperationStatus.fail('تهیه Excel ناموفق بود', { operationId: operationId, message: data.message || 'فایل گزارش ساخته نشد.' });
                     $('#waiting').hide();
                     setButtonsDesible(false);
                     OnchangeStat();
@@ -283,6 +245,7 @@ function ExportExcelInq() {
                 $('#waiting').hide();
                 setButtonsDesible(false);
                 OnchangeStat();
+                TaxOperationStatus.fail('تهیه Excel ناموفق بود', { operationId: operationId, message: 'در تهیه فایل گزارش خطایی رخ داد.' });
                 //loadingMessage.text('Error loading items.'); // Handle error case
             }
         });
@@ -292,9 +255,10 @@ function ExportExcelInq() {
         $('#waiting').hide();
         setButtonsDesible(false);
         OnchangeStat();
+        TaxOperationStatus.fail('تهیه Excel ناموفق بود', { message: errgetAllInvoiceList.message || 'فایل گزارش ساخته نشد.' });
     }
 }
-function ExportExcel() {
+async function ExportExcel() {
     try {
         //var filter = CreateFilter();
         var filter = {
@@ -307,12 +271,14 @@ function ExportExcel() {
         };
         $('#waiting').show();
         setButtonsDesible(true);
+        var operationId = await TaxOperationStatus.begin(connection1, 'تهیه خروجی Excel', 0);
         $.ajax({
             url: '/SendInvoice/GetAllInvoiceInExcel', // Replace with your API endpoint
             //url: GETInviceListURL, // Replace with your API endpoint
             type: 'POST',
             data: {
-                searchFilter: filter
+                searchFilter: filter,
+                operationId: operationId
             }, // Send the InvoiceId to fetch items
             //data: { search: filter }, // Send the InvoiceId to fetch items
             success: function (data) {
@@ -321,12 +287,14 @@ function ExportExcel() {
 
                     file = data.Data;
                     window.location.href = "/Resources/FilesData" + "/" + file;
+                    TaxOperationStatus.complete('خروجی Excel آماده شد', { operationId: operationId, message: 'فایل گزارش آماده دانلود است.' });
 
                     $('#waiting').hide();
                     setButtonsDesible(false);
                     OnchangeStat();
                 } else {
                     console.log(data.message);
+                    TaxOperationStatus.fail('تهیه Excel ناموفق بود', { operationId: operationId, message: data.message || 'فایل گزارش ساخته نشد.' });
                     $('#waiting').hide();
                     setButtonsDesible(false);
                     OnchangeStat();
@@ -336,6 +304,7 @@ function ExportExcel() {
                 $('#waiting').hide();
                 setButtonsDesible(false);
                 OnchangeStat();
+                TaxOperationStatus.fail('تهیه Excel ناموفق بود', { operationId: operationId, message: 'در تهیه فایل گزارش خطایی رخ داد.' });
                 //loadingMessage.text('Error loading items.'); // Handle error case
             }
         });
@@ -345,10 +314,11 @@ function ExportExcel() {
         $('#waiting').hide();
         setButtonsDesible(false);
         OnchangeStat();
+        TaxOperationStatus.fail('تهیه Excel ناموفق بود', { message: errgetAllInvoiceList.message || 'فایل گزارش ساخته نشد.' });
     }
 }
 
-function ExportExcelSummary() {
+async function ExportExcelSummary() {
     try {
         //var filter = CreateFilter();
         var filter = {
@@ -361,12 +331,14 @@ function ExportExcelSummary() {
         };
         $('#waiting').show();
         setButtonsDesible(true);
+        var operationId = await TaxOperationStatus.begin(connection1, 'تهیه خروجی Excel خلاصه', 0);
         $.ajax({
             url: '/SendInvoice/GetAllInvoiceInExcelSummary', // Replace with your API endpoint
             //url: GETInviceListURL, // Replace with your API endpoint
             type: 'POST',
             data: {
-                searchFilter: filter
+                searchFilter: filter,
+                operationId: operationId
             }, // Send the InvoiceId to fetch items
             //data: { search: filter }, // Send the InvoiceId to fetch items
             success: function (data) {
@@ -375,12 +347,14 @@ function ExportExcelSummary() {
 
                     file = data.Data;
                     window.location.href = "/Resources/FilesData" + "/" + file;
+                    TaxOperationStatus.complete('خروجی Excel خلاصه آماده شد', { operationId: operationId, message: 'فایل گزارش خلاصه آماده دانلود است.' });
 
                     $('#waiting').hide();
                     setButtonsDesible(false);
                     OnchangeStat();
                 } else {
                     console.log(data.message);
+                    TaxOperationStatus.fail('تهیه Excel ناموفق بود', { operationId: operationId, message: data.message || 'فایل گزارش ساخته نشد.' });
                     $('#waiting').hide();
                     setButtonsDesible(false);
                     OnchangeStat();
@@ -390,6 +364,7 @@ function ExportExcelSummary() {
                 $('#waiting').hide();
                 setButtonsDesible(false);
                 OnchangeStat();
+                TaxOperationStatus.fail('تهیه Excel ناموفق بود', { operationId: operationId, message: 'در تهیه فایل گزارش خطایی رخ داد.' });
                 //loadingMessage.text('Error loading items.'); // Handle error case
             }
         });
@@ -399,6 +374,7 @@ function ExportExcelSummary() {
         $('#waiting').hide();
         setButtonsDesible(false);
         OnchangeStat();
+        TaxOperationStatus.fail('تهیه Excel ناموفق بود', { message: errgetAllInvoiceList.message || 'فایل گزارش ساخته نشد.' });
     }
 }
 function CheckConnection() {
@@ -1040,7 +1016,7 @@ function SelectAndUnSelectAll(typ) {
         console.log("SelectAndUnSelectAll:" + errSelectAndUnSelectAll);
     }
 }
-function getAllInvoiceList() {
+async function getAllInvoiceList(trackOperation) {
     
     try {
         //var filter = CreateFilter();
@@ -1055,6 +1031,10 @@ function getAllInvoiceList() {
         };
         $('#waiting').show();
         setButtonsDesible(true);
+        var shouldTrack = trackOperation !== false;
+        var operationId = shouldTrack
+            ? await TaxOperationStatus.begin(connection1, 'فراخوانی فاکتورها', 0)
+            : null;
         $.ajax({
             url: '/SendInvoice/GetAllInvoice',
             type: 'POST',
@@ -1077,6 +1057,16 @@ function getAllInvoiceList() {
                     tblDoNotSend.rows.add(data.Data);
                     tblDoNotSend.draw();
                     ListOffAllInvoice = data.Data;
+                    if (shouldTrack) {
+                        TaxOperationStatus.complete('فراخوانی فاکتورها تکمیل شد', {
+                            operationId: operationId,
+                            message: data.Data.length + ' فاکتور در جدول بارگذاری شد.',
+                            processed: data.Data.length,
+                            total: data.Data.length,
+                            succeeded: data.Data.length,
+                            failed: 0
+                        });
+                    }
                     // ListNotSend = data.doNotSend;
                     // ListSendNoStatus=data.sendNoStatus;
                     // ListSendReturnedStatus=data.sendReturnedStatus;
@@ -1086,6 +1076,8 @@ function getAllInvoiceList() {
                     OnchangeStat();
                 } else {
                     console.log(data.message);
+                    if (shouldTrack)
+                        TaxOperationStatus.fail('فراخوانی فاکتورها ناموفق بود', { operationId: operationId, message: data.message || 'فاکتورها بارگذاری نشدند.' });
                     $('#waiting').hide();
                     setButtonsDesible(false);
                     OnchangeStat();
@@ -1095,6 +1087,8 @@ function getAllInvoiceList() {
                 $('#waiting').hide();
                 setButtonsDesible(false);
                 OnchangeStat();
+                if (shouldTrack)
+                    TaxOperationStatus.fail('فراخوانی فاکتورها ناموفق بود', { operationId: operationId, message: 'در دریافت فهرست فاکتورها خطایی رخ داد.' });
                 //loadingMessage.text('Error loading items.'); // Handle error case
             }
         });
@@ -1104,6 +1098,7 @@ function getAllInvoiceList() {
         $('#waiting').hide();
         setButtonsDesible(false);
         OnchangeStat();
+        TaxOperationStatus.fail('فراخوانی فاکتورها ناموفق بود', { message: errgetAllInvoiceList.message || 'فاکتورها بارگذاری نشدند.' });
     }
 }
 function CreateFilter() {
@@ -1172,9 +1167,8 @@ function SendFactorForTax(dataID) {
     }
 }
 
-function groupingSendForTaxWithParameter() {
+async function groupingSendForTaxWithParameter() {
     try {
-        var selectedRows = tblDoNotSend.rows('.selected').data();
         var selectedRows = tblDoNotSend.rows('.row_selected').data();
 
         if (selectedRows.length > 0) {
@@ -1202,97 +1196,72 @@ function groupingSendForTaxWithParameter() {
                 Requests.push(dtoInvoiceLimitParameter);
             }
 
+            if (Requests.length === 0) {
+                TaxOperationStatus.fail('ارسال انجام نشد', { message: 'فاکتورهای انتخاب‌شده در وضعیت قابل ارسال نیستند.' });
+                return;
+            }
+
             $('#waiting').show();
             setButtonsDesible(true);
             var sumofCount = Requests.length;
-            // Function to send requests in batches
-            // New
-            {
-                async function sendBatch(batch) {
-                    try {
-                        // Wait for the response before moving on
-                        const response = await $.post(SendGroupingInvoiceAsyncURL, { stringList: batch, SumCount: sumofCount,batchSize:100 });
+            var operationId = await TaxOperationStatus.begin(connection1, 'ارسال فاکتورها', sumofCount);
+            var finalResponse = null;
 
-                        if (response.Partial === true) {
-                            new PNotify({
-                                title: 'ارسال موفق',
-                                delay: 2000,
-                                text: 'ارسال بسته 100 تایی!',
-                                type: 'success',
-                                styling: 'bootstrap3',
-                                closer: true,
-                                sticker: false
-                            });
-                            return;
-                        }
+            for (let i = 0; i < Requests.length; i += 100) {
+                const batch = Requests.slice(i, i + 100);
+                finalResponse = await $.post(SendGroupingInvoiceAsyncURL, {
+                    stringList: batch,
+                    SumCount: sumofCount,
+                    batchSize: 100,
+                    operationId: operationId
+                });
 
-                        if (response.success && response.Partial !== true) {
-                            // Handle success response
-                            getAllInvoiceList();
-                            clearLiveStatus(); // بستن کادر پیشرفت زنده پس از پایان کار
-                            new PNotify({
-                                title: 'ارسال موفق',
-                                text: 'فاکتورهای انتخاب‌شده با موفقیت ارسال شدند.',
-                                type: 'success',
-                                hide: false,        // پیام ثابت می‌ماند تا کاربر آن را ببندد
-                                styling: 'bootstrap3',
-                                closer: true,
-                                sticker: true
-                            });
-                        } else {
-                            new PNotify({
-                                title: 'ارسال ناموفق',
-                                delay: 2000,
-                                text: response.message,
-                                type: 'error',
-                                styling: 'bootstrap3',
-                                closer: true,
-                                sticker: false
-                            });
-                            //alert(response.message);
-                            console.log(response);
-                        }
-                    } catch (error) {
-                        console.error('Error sending batch:', error);
-                    } finally {
-                        setButtonsDesible(false);
-                        $('#waiting').hide();
-                    }
+                if (finalResponse.Partial === true) {
+                    TaxOperationStatus.update('آماده‌سازی ارسال فاکتورها', {
+                        operationId: operationId,
+                        message: 'اطلاعات ' + Math.min(i + batch.length, sumofCount) + ' فاکتور از ' + sumofCount + ' دریافت شد؛ ارسال هنوز ادامه دارد.',
+                        processed: 0,
+                        total: sumofCount,
+                        succeeded: 0,
+                        failed: 0
+                    });
                 }
-
-                async function sendBatchesSequentially(requests) {
-                    for (let i = 0; i < requests.length; i += 100) {
-                        const batch = requests.slice(i, i + 100);
-                        await sendBatch(batch); 
-                    }
-                }
-
-                sendBatchesSequentially(Requests);
             }
 
+            if (finalResponse && finalResponse.success) {
+                var sentCount = typeof finalResponse.countOfSend === 'number' ? finalResponse.countOfSend : sumofCount;
+                TaxOperationStatus.complete('ارسال تکمیل شد', {
+                    operationId: operationId,
+                    message: 'عملیات ارسال فاکتورهای انتخاب‌شده پایان یافت.',
+                    processed: sumofCount,
+                    total: sumofCount,
+                    succeeded: sentCount,
+                    failed: Math.max(0, sumofCount - sentCount)
+                });
+                getAllInvoiceList(false);
+            } else {
+                var partialSentCount = finalResponse && finalResponse.res
+                    ? Number(finalResponse.res.Count != null ? finalResponse.res.Count : finalResponse.res.count || 0)
+                    : 0;
+                TaxOperationStatus.fail('ارسال با خطا پایان یافت', {
+                    operationId: operationId,
+                    message: (finalResponse && finalResponse.message) || 'ارسال فاکتورها کامل نشد.',
+                    processed: sumofCount,
+                    total: sumofCount,
+                    succeeded: partialSentCount,
+                    failed: Math.max(0, sumofCount - partialSentCount)
+                });
+            }
         } else {
-            // alert("فاکتوری جهت ارسال انتخاب نشده است");
-            new PNotify({
-                title: 'ارسال ناموفق',
-                delay: 2000,
-                text: 'فاکتوری جهت ارسال انتخاب نشده است',
-                type: 'error',
-                styling: 'bootstrap3',
-                closer: true,
-                sticker: false
-            });
-            setButtonsDesible(false);
-            $('#waiting').hide();
-            OnchangeStat();
+            TaxOperationStatus.fail('ارسال انجام نشد', { message: 'فاکتوری جهت ارسال انتخاب نشده است.' });
         }
     } catch (errgroupingSendForTaxWithParameter) {
-        setButtonsDesible(false);
-        $('#waiting').hide();
-        OnchangeStat();
-
         console.log("groupingSendForTaxWithParameter:" + errgroupingSendForTaxWithParameter);
+        TaxOperationStatus.fail('ارسال ناموفق', { message: errgroupingSendForTaxWithParameter.message || 'در ارسال فاکتورها خطایی رخ داد.' });
+    } finally {
         $('#waiting').hide();
         setButtonsDesible(false);
+        OnchangeStat();
     }
 }
 

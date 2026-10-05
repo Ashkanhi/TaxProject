@@ -1,0 +1,58 @@
+﻿@{
+    // صفحه تست مستقل از قالب اصلی سایت نمایش داده می‌شود.
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <title>آزمایش ورود به امید</title>
+</head>
+<body>
+    <h2>آزمایش ورود به امید</h2>
+
+    <p>
+        این آزمایش فقط ورود و دریافت توکن را بررسی می‌کند.
+        هیچ صورتحسابی ارسال نمی‌شود.
+    </p>
+
+    @* ارسال درخواست به متد Login کنترلر با روش POST. *@
+    <form method="post" action="@Url.Action("Login", "OmidTest")">
+
+        @* ایجاد توکن محافظت از فرم که کنترلر اعتبار آن را بررسی می‌کند. *@
+        @Html.AntiForgeryToken()
+
+        <button type="submit">آزمایش ورود</button>
+    </form>
+
+    <hr />
+    <h2>پیش‌نمایش صورتحساب امید</h2>
+    <p>این دکمه فقط JSON را می‌سازد؛ صورتحساب ارسال نمی‌شود.</p>
+
+    <form method="post" action="@Url.Action("PreviewInvoice", "OmidTest")">
+        @Html.AntiForgeryToken()
+
+        <p>
+            <label for="InvoiceID">InvoiceID:</label>
+            <input id="InvoiceID" name="InvoiceID" required />
+        </p>
+
+        <p>
+            <label for="StoreID">StoreID:</label>
+            <input id="StoreID" name="StoreID" type="number" required />
+        </p>
+
+        <p>
+            <label for="BookerWorkstationID">BookerWorkstationID:</label>
+            <input id="BookerWorkstationID"
+                   name="BookerWorkstationID"
+                   type="number"
+                   value="0"
+                   required />
+        </p>
+
+        <button type="submit">ساخت پیش‌نمایش JSON</button>
+    </form>
+</body>
+</html>

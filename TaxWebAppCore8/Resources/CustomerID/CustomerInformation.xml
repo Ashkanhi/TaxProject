@@ -1,0 +1,97 @@
+<?xml version="1.0"?>
+<DTOServerInfo xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+			   xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+	<CustomerName>FamilyF01</CustomerName>
+	<!--<MEMORY_ID>10320214500</MEMORY_ID>-->
+	<MEMORY_ID>A29886</MEMORY_ID>
+	<!--<MEMORY_ID>A12GM4</MEMORY_ID> sELF-->
+	<!--<MEMORY_ID>A12GM4</MEMORY_ID>-->
+	<!--شناسه یکتای حافظه مالیاتی-->
+	<!--<TINS>10861569558</TINS>-->
+	<TINS>62652418745</TINS>
+	<!--<TINS>10320214500</TINS>Self-->
+	<!--کد اقتصادی-->
+	<!--TAX AP-->
+
+	<!--نسخه محاسباتRima-->
+	<!--<API_URL>http://api.rima.tax/</API_URL>-->
+
+	<!--// عملیاتی Rima-->
+	<!--<API_URL>http://10.3.44.65:8443</API_URL>-->
+	
+	<!--محاسباتی-->
+	<API_URL>https://api-argham.rimatsp.com</API_URL>
+	<!--Panel :: https://panel-argham.rimatsp.com/-->	
+	
+	<!--<API_URL>http://5.34.206.87:9000</API_URL>-->
+	
+	<!--// تست-->
+	<!--<API_URL>https://sandboxrc.rimatsp.com</API_URL>-->
+
+	<!--اصلی خود مالیات-->
+	<!--<API_URL>https://tp.tax.gov.ir/requestsmanager</API_URL>-->
+	
+	<!--TissAPI-->
+	<!--<API_URL>https://portal.tisstsp.ir/api/</API_URL>-->
+
+	<!--Omid test panel settings. Keep separate from API_URL so the active Tax provider is unchanged.-->
+	<OMID_API_URL>https://service.omid.tax</OMID_API_URL>
+	<OMID_API_KEY>1786D8CC-5B4E-4172-93F0-5137A54CD6B6</OMID_API_KEY>
+	<OMID_API_SECRET>EAC6A0E9-1D18-46DD-9A18-3AF14943386C</OMID_API_SECRET>
+	<OMID_AES_KEY_BASE64>3P+d5up+gPly/vCRak5xKWHdEk7GeKyd+/s7/SpRAvc=</OMID_AES_KEY_BASE64>	
+	<OMID_AES_IV_BASE64>Px47mtvRhan1hIzSCAkHeg==</OMID_AES_IV_BASE64>
+	<OMID_USERNAME>2721569864</OMID_USERNAME>
+	<OMID_PASSWORD>4032488</OMID_PASSWORD>
+
+	<!--آدرس فایل کلید خصوصی امضا به فرمت #8PKCS و Encode شده 
+			C:/private_key.pem :نمونه .Base64 فرمت به-->
+
+	<!--<FILE_KEY_PRIVATE>eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTczMjA5NjI0MSwiZXhwIjoyNzMyMDk2MjQxfQ.erVbsNB4jV5FvhZuCKYAqwBSj2jZENWQR8x78wzJyRw</FILE_KEY_PRIVATE>-->
+
+	<!--<FILE_KEY_PRIVATE>eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI1Vy1ka2tQaDd4MGxEOVdqbTF5TXJKY0s4SldlSUtFQ1NiQ3k0SU9HSG1FIn0.eyJleHAiOjE3NjM5Njc1OTIsImlhdCI6MTczMjQzMTU5MiwianRpIjoiOWI0MDYxODEtMmVlNi00Mzc5LTg0YTYtNTgxZmZhNGM1Y2Q3IiwiaXNzIjoiaHR0cHM6Ly9zc28udGlzc3RzcC5pci9yZWFsbXMvVFNQIiwiYXVkIjoiYWNjb3VudCIsInN1YiI6IjMwYjI4MzQyLTc3OWEtNDk0Ni05ZjVhLWE3ZTc0NWUxZGFjOCIsInR5cCI6IkJlYXJlciIsImF6cCI6ImFwaS1rZXkiLCJzZXNzaW9uX3N0YXRlIjoiMmViZjRkNGQtODUxMC00ZWM3LWI1YjktMWFiZTZhZGE2NTA5IiwiYWNyIjoiMSIsImFsbG93ZWQtb3JpZ2lucyI6WyIqIl0sInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJvZmZsaW5lX2FjY2VzcyIsInVtYV9hdXRob3JpemF0aW9uIiwiZGVmYXVsdC1yb2xlcy10c3AiXX0sInJlc291cmNlX2FjY2VzcyI6eyJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19LCJzY29wZSI6Im9wZW5pZCBvcmdhbml6YXRpb24gb2ZmbGluZV9hY2Nlc3MgcHJvZmlsZSIsInNpZCI6IjJlYmY0ZDRkLTg1MTAtNGVjNy1iNWI5LTFhYmU2YWRhNjUwOSIsInByZWZlcnJlZF91c2VybmFtZSI6IjAwMTQ5NzEyNzUifQ.Eri1z3g4Tx31GazT8pL739B9njIRBh4bDfOqystMYDIu_24CpsGZcpFM10Ly7PFT1VARZb-n0PdLyvP-7WxRSt9Y3kyjYZ0aUzxvIzRCOXbe9_Ev4zb1pCBzD-9XrCY4bEWGgjBIwyI5j-DWylYhmMBuTXM5xoIl0pkLP4yD8AqecHH01C85e2HRIuNEHLf6w8SfNuFnXY7O1eosGgFZ4ZdMIZMVZsHCsO175Cmm8TzN_BJHlGIDwzGIEuVIi0dEHWk9SmwFNVR0FBafSlUHq1y_0p1Z2DlIMxCARyafiTv8sgaJ040TJB8EYgJz3jU2Ve3JT-7YRhRt302RiwUbVg</FILE_KEY_PRIVATE>-->
+
+	<FILE_KEY_PRIVATE>C:\key\Moham\private.pem</FILE_KEY_PRIVATE>
+
+	<FILE_CERTIFICATE>C:\key\Moham\1_15009421005 - Copy.cer</FILE_CERTIFICATE>
+
+	<!--آدرس فایل گواهی امضای دیجیتال به فرمت 64Base. نمونه:
+	C:/certificate.cer -->
+
+	<!--برای حالت استفاده از توکن-->
+	<TokenType>CertificateFile</TokenType>
+	<!--HardLock Or CertificateFile-->
+
+	<CertificateName>A2XAKR</CertificateName>
+	<PASSWORD>RWP@1393</PASSWORD>
+
+	<LIBRARY_PATH>123</LIBRARY_PATH>
+	
+	<!--ابتدا نرم افزار exe-1.0.17.519.English3003-ePass را نصب کنید. پس از متصلنمودن توکن،
+	نرمافزار را باز کرده و بر روی دکمه Login کلیک کرده و پسورد خود را وارد کنید. لیستی از کلیدهای توکن
+	مطابق شکل زیر به نمای ش در میآید:-->
+	<!--مقدار موجود در قسمت Name Certificate گواهی مورد نظر شما همان Alias می باشد که
+	میتوانید به عنوان نام گواهی هنگام پیکربندی SDK به تابع create کالس SignatoryFactory11Pkcs
+	بدهید تا عملیات امضای توکن و صورتحساب را برای شما انجام بدهد-->
+
+	<DataBaseServer>DESKTOP-S0EBT2U\RWP_2022</DataBaseServer>
+	<DbName>RWP_Sale_DB_Bakhshi</DbName>
+	<UserId>sa</UserId>
+	<UserPass>RWP@1393</UserPass>
+	<ConnectionTimeOut>120</ConnectionTimeOut>
+	<!--Based On Second-->
+
+	<ServiceType>Tax</ServiceType>
+	<!--Tis OR Tax Or Rima Or RimaCalculate Or Omid-->
+
+	<DataBaseType>Baran</DataBaseType>
+	<!--Baran OR Argham-->
+
+	<!--نیازی به ست شدن نیست-->
+	<StoreId>1</StoreId>
+	<!--کد یا آی دی مربوط به فروشگاه-->
+
+	<License>qZqWmQtT-zzYIwspymq7X0i5d1bQLin9xD7ADW3KzVo</License>
+	<!--لایسنس مشتری-->
+
+</DTOServerInfo>

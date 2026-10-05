@@ -26,42 +26,11 @@ var ListOffAllInvoice = [];
 var FactorID;
 var connection1;
 
-// ===== کادر واحد «وضعیت زنده» =====
-// رفع باگ ماندگاری پیام‌ها (حذف setInterval تکرارشونده) و جلوگیری از نمایش روی‌هم پیام‌ها.
-var liveStatusNotify = null;
-var liveStatusTimer = null;
-var LIVE_STATUS_IDLE_MS = 180000; // اگر تا ۳ دقیقه پیام جدیدی نیاید، کادر خودکار بسته می‌شود
 function showLiveStatus(title, text) {
-    try {
-        if (liveStatusTimer) { clearTimeout(liveStatusTimer); liveStatusTimer = null; }
-        var isOpen = liveStatusNotify && (liveStatusNotify.state === 'open' || liveStatusNotify.state === 'opening');
-        if (isOpen) {
-            liveStatusNotify.update({ title: title, text: text, type: 'success' });
-        } else {
-            liveStatusNotify = new PNotify({
-                title: title,
-                text: text,
-                type: 'success',
-                addclass: 'custom-blue-notification',
-                styling: 'bootstrap3',
-                hide: false,
-                closer: true,
-                sticker: false,
-                width: '380px',
-                history: false
-            });
-        }
-        liveStatusTimer = setTimeout(clearLiveStatus, LIVE_STATUS_IDLE_MS);
-    } catch (e) {
-        console.log('showLiveStatus:' + e);
-    }
+    TaxOperationStatus.update(title, text);
 }
 function clearLiveStatus() {
-    if (liveStatusTimer) { clearTimeout(liveStatusTimer); liveStatusTimer = null; }
-    if (liveStatusNotify) {
-        try { liveStatusNotify.remove(); } catch (e) { }
-        liveStatusNotify = null;
-    }
+    TaxOperationStatus.hide();
 }
 
 $(document).ready(function () {
@@ -147,19 +116,7 @@ $(document).ready(function () {
     //});
     connection1.on("SendToTaxEventsError", function (data) {
         try {
-            setButtonsDesible(false);
-            //$('#waiting').hide();
-            // You can access the data object here
-            new PNotify({
-                title: 'استعلام با خطا',
-                text: data,
-                type: 'warning',
-                styling: 'bootstrap3',
-                closer: true, // Ensure the close button is enabled
-                sticker: false, // Disable the sticker if you want to ensure it does not
-                addclass: 'custom-blue-notification',
-
-            });
+            TaxOperationStatus.fail('استعلام ناموفق', data);
         } catch (e) {
             console.error(e);
         }
@@ -271,7 +228,7 @@ function InitElemans() {
     }
 }
 
-function ExportExcelInq() {
+async function ExportExcelInq() {
     try {
         //var filter = CreateFilter();
         var filter = {};
@@ -283,12 +240,14 @@ function ExportExcelInq() {
 
         $('#waiting').show();
         setButtonsDesible(true);
+        var operationId = await TaxOperationStatus.begin(connection1, 'تهیه خروجی Excel استعلام', 0);
         $.ajax({
             url: '/SendInvoice/GetAllInvoiceWithInqFromServerInExcel', // Replace with your API endpoint
             //url: GETInviceListURL, // Replace with your API endpoint
             type: 'POST',
             data: {
-                searchFilter: filter
+                searchFilter: filter,
+                operationId: operationId
             }, // Send the InvoiceId to fetch items
             //data: { search: filter }, // Send the InvoiceId to fetch items
             success: function (data) {
@@ -297,12 +256,17 @@ function ExportExcelInq() {
 
                     file = data.Data;
                     window.location.href = "/Resources/FilesData" + "/" + file;
+                    TaxOperationStatus.complete('خروجی Excel آماده شد', {
+                        operationId: operationId,
+                        message: 'فایل گزارش استعلام آماده دانلود است.'
+                    });
 
                     $('#waiting').hide();
                     setButtonsDesible(false);
                     OnchangeStat();
                 } else {
                     console.log(data.message);
+                    TaxOperationStatus.fail('تهیه Excel ناموفق بود', { operationId: operationId, message: data.message || 'فایل گزارش ساخته نشد.' });
                     $('#waiting').hide();
                     setButtonsDesible(false);
                     OnchangeStat();
@@ -312,6 +276,7 @@ function ExportExcelInq() {
                 $('#waiting').hide();
                 setButtonsDesible(false);
                 OnchangeStat();
+                TaxOperationStatus.fail('تهیه Excel ناموفق بود', { operationId: operationId, message: 'در تهیه فایل گزارش خطایی رخ داد.' });
                 //loadingMessage.text('Error loading items.'); // Handle error case
             }
         });
@@ -321,6 +286,7 @@ function ExportExcelInq() {
         $('#waiting').hide();
         setButtonsDesible(false);
         OnchangeStat();
+        TaxOperationStatus.fail('تهیه Excel ناموفق بود', { message: errgetAllInvoiceList.message || 'فایل گزارش ساخته نشد.' });
     }
 }
 function ExportExcel() {
@@ -401,7 +367,7 @@ function CheckConnection() {
         }
     });
 }
-function InqSearch() {
+async function InqSearch() {
     var filter = {};
     filter.DateFromStr = $('#txtFromDate').val();
     filter.DateToStr = $('#txtToDate').val();
@@ -409,11 +375,22 @@ function InqSearch() {
     filter.StorIDs = $('#cmbStores').val();
     $('#waiting').show();
     setButtonsDesible(true);
+    $('#inquirySummary').hide();
+    var operationId;
+    try {
+        operationId = await TaxOperationStatus.begin(connection1, 'استعلام وضعیت فاکتورها', 0);
+    } catch (connectionError) {
+        $('#waiting').hide();
+        setButtonsDesible(false);
+        TaxOperationStatus.fail('استعلام ناموفق', { message: connectionError.message });
+        return;
+    }
     $.ajax({
         url: '/SendInvoice/GetAllInvoiceWithInqFromServer',
         type: 'POST',
         data: {
-            searchFilter: filter
+            searchFilter: filter,
+            operationId: operationId
         },
         success: function (data) {
             $('#waiting').hide();
@@ -432,23 +409,57 @@ function InqSearch() {
                 tblInquiry.rows.add(data.Data);
                 tblInquiry.draw();
                 ListOffAllInvoice = data.Data;
+                renderInquirySummary(data.Data);
+                var inquiryFailedCount = data.Data.filter(function (row) { return row.InquiryFailed; }).length;
+                var completionPayload = {
+                    operationId: operationId,
+                    message: inquiryFailedCount > 0
+                        ? 'نتیجه نمایش داده شد، اما استعلام بعضی فاکتورها کامل نبود.'
+                        : 'نتیجه استعلام در جدول و خلاصه بالای آن نمایش داده شد.',
+                    processed: data.Data.length,
+                    total: data.Data.length,
+                    succeeded: data.Data.filter(function (row) { return Number(row.fSendState) === 4; }).length,
+                    failed: data.Data.filter(function (row) { return Number(row.fSendState) === 3 || row.InquiryFailed; }).length
+                };
+                if (inquiryFailedCount > 0)
+                    TaxOperationStatus.fail('استعلام با خطا پایان یافت', completionPayload);
+                else
+                    TaxOperationStatus.complete('استعلام تکمیل شد', completionPayload);
                 $('#waiting').hide();
                 setButtonsDesible(false);
                 OnchangeStat();
             }
             else {
                 console.log(data.message);
+                TaxOperationStatus.fail('استعلام ناموفق', { operationId: operationId, message: data.message || 'استعلام کامل نشد.' });
                 $('#waiting').hide();
                 setButtonsDesible(false);
                 OnchangeStat();
             }
         },
-        error: function () {
+        error: function (xhr) {
             $('#waiting').hide();
             setButtonsDesible(false);
             OnchangeStat();
+            TaxOperationStatus.fail('استعلام ناموفق', {
+                operationId: operationId,
+                message: (xhr.responseJSON && xhr.responseJSON.message) || 'در ارتباط با سرور خطایی رخ داد.'
+            });
         }
     });
+}
+
+function renderInquirySummary(rows) {
+    rows = rows || [];
+    var count = function (predicate) { return rows.filter(predicate).length; };
+    $('#inquirySummaryTotal').text('کل: ' + rows.length);
+    $('#inquirySummarySuccess').text('ارسال موفق: ' + count(function (row) { return Number(row.fSendState) === 4; }));
+    $('#inquirySummaryPending').text('در انتظار تعیین وضعیت: ' + count(function (row) { return Number(row.fSendState) === 2; }));
+    $('#inquirySummaryFailed').text('ارسال با خطا: ' + count(function (row) { return Number(row.fSendState) === 3; }));
+    $('#inquirySummaryUnsent').text('ارسال‌نشده: ' + count(function (row) { return row.fSendState == null || Number(row.fSendState) === 1; }));
+    $('#inquirySummaryNoReference').text('فاقد مرجع معتبر: ' + count(function (row) { return !row.HasValidInquiryReference; }));
+    $('#inquirySummaryInquiryFailed').text('استعلام ناموفق: ' + count(function (row) { return row.InquiryFailed; }));
+    $('#inquirySummary').show();
 }
 function GetStores() {
 
@@ -769,6 +780,14 @@ function InitialInqTables() {
             { data: "fListOfErrorCaption", name: "fListOfErrorCaption", title: "توضیح وضعیت" },
             { data: "PersianCreateDate", name: "PersianCreateDate", title: "تاریخ ثبت" },
             { data: "CustomerName", name: "CustomerName", title: "مشتری", sortable: false },
+            {
+                data: "InquirySource", name: "InquirySource", title: "منبع وضعیت", sortable: false,
+                render: function (data, type, row) {
+                    if (row.InquiryFailed) return '<span class="label label-danger">استعلام ناموفق</span>';
+                    if (row.WasQueriedFromTaxService) return '<span class="label label-success">استعلام‌شده از سامانه مودیان</span>';
+                    return '<span class="label label-default">وضعیت ثبت‌شده محلی</span>';
+                }
+            },
             { data: "InqMessage", name: "InqMessage", title: "شرح", sortable: false },
 
             { data: "NetPriceWithSeperator", name: "NetPriceWithSeperator", title: "مبلغ خالص(ریال)", sortable: false },

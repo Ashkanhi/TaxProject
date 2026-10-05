@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<DTOServerInfo xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <!-- Copy these fields into the deployed CustomerInformation.xml. -->
+  <OMID_API_URL>https://service.omid.tax</OMID_API_URL>
+  <OMID_API_KEY>__OMID_API_KEY__</OMID_API_KEY>
+  <OMID_API_SECRET>__OMID_API_SECRET__</OMID_API_SECRET>
+  <OMID_AES_KEY_BASE64>__OMID_AES_KEY_BASE64__</OMID_AES_KEY_BASE64>
+  <OMID_AES_IV_BASE64>__OMID_AES_IV_BASE64__</OMID_AES_IV_BASE64>
+  <OMID_USERNAME>__OMID_USERNAME__</OMID_USERNAME>
+  <OMID_PASSWORD>__OMID_PASSWORD__</OMID_PASSWORD>
+  <ServiceType>Omid</ServiceType>
+</DTOServerInfo>

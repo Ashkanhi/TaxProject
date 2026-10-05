@@ -112,8 +112,6 @@ namespace TaxServiceAndApp.Models
                 return false;
             }
         }
-        List<Invoice> bodyDtoSysDTOs = new List<Invoice>();
-
         public async Task<InvoiceInputModel> GetInvoice(DTOInvoiceLimitParameter invoice, bool isCancel = false)
         {
             try
@@ -151,7 +149,6 @@ namespace TaxServiceAndApp.Models
 
                     return null;
                 }
-            bodyDtoSysDTOs.Add(inv);
             //invoiceId = inv.RimaHeader.InvoiceId.ToString();
             DateTime calcTissDocumentDate = inv.Header.InvoiceDate ?? DateTime.Now; // Replace with your actual date
             DateTime tissDocumentDate = calcTissDocumentDate.AddMinutes(-30);
@@ -253,7 +250,6 @@ namespace TaxServiceAndApp.Models
                 var logger = ClsTools.Logger.NPSLogger.GetLogger(ClsTools.Logger.ModuleName.ArghamCompany_TaxGoverment);
                 logger.LogError($"BaranDB:{MethodBase.GetCurrentMethod().DeclaringType.Name}:: Error: {ex.Message}", ex);
                 return null;
-
             }
         }
         private object GetGroupingInvoice(string invoiceId, bool isCancel)
@@ -336,6 +332,49 @@ namespace TaxServiceAndApp.Models
             }
         }
 
+        private sealed class RimaConfigurationException : Exception
+        {
+            public RimaConfigurationException(string message) : base(message) { }
+        }
+
+        private static Uri BuildRimaApiUri(string relativePath = "")
+        {
+            var configuredUrl = BMain.SrvInfo?.API_URL?.Trim();
+            if (string.IsNullOrWhiteSpace(configuredUrl))
+                throw new RimaConfigurationException("آدرس سرویس ریما در تنظیمات وارد نشده است.");
+
+            configuredUrl = configuredUrl.TrimEnd('/') + "/";
+            if (!Uri.TryCreate(configuredUrl, UriKind.Absolute, out var baseUri) ||
+                (baseUri.Scheme != Uri.UriSchemeHttp && baseUri.Scheme != Uri.UriSchemeHttps) ||
+                string.IsNullOrWhiteSpace(baseUri.Host))
+            {
+                throw new RimaConfigurationException("آدرس سرویس ریما در تنظیمات معتبر نیست.");
+            }
+
+            if (string.IsNullOrWhiteSpace(relativePath))
+                return baseUri;
+
+            return new Uri(baseUri, relativePath.TrimStart('/'));
+        }
+
+        private static string GetPersianRimaError(Exception exception, string operationTitle)
+        {
+            if (exception is RimaConfigurationException || exception is UriFormatException ||
+                exception.Message.Contains("Invalid URI", StringComparison.OrdinalIgnoreCase) ||
+                exception.Message.Contains("hostname could not be parsed", StringComparison.OrdinalIgnoreCase))
+            {
+                return "آدرس سرویس ریما در تنظیمات معتبر نیست. لطفاً تنظیم API_URL بررسی شود.";
+            }
+
+            if (exception is TaskCanceledException)
+                return $"زمان انتظار برای {operationTitle} در سرویس ریما به پایان رسید. لطفاً دوباره تلاش کنید.";
+
+            if (exception is HttpRequestException)
+                return $"ارتباط با سرویس ریما برای {operationTitle} برقرار نشد. لطفاً اتصال شبکه و دسترسی سرویس بررسی شود.";
+
+            return $"در {operationTitle} خطای داخلی رخ داد. جزئیات فنی در گزارش سیستم ثبت شد.";
+        }
+
         public async Task<bool> SignUp()
         {
             SignUpInputModel registerUserRequest = new SignUpInputModel()
@@ -362,7 +401,7 @@ namespace TaxServiceAndApp.Models
                     client.DefaultRequestHeaders.Add("X-orgid", BMain.SrvInfo.MEMORY_ID);
 
                     var content = new StringContent(jregisterUserRequest, Encoding.UTF8, "application/json");
-                    var res = await client.PostAsync(BMain.SrvInfo.API_URL + "/Auth/SignUp",
+                    var res = await client.PostAsync(BuildRimaApiUri("Auth/SignUp"),
                         content);
                     //HttpResponseMessage res = await client.SendAsync(request);
                     ClsTools.Logger.NPSLogger.GetLogger(ClsTools.Logger.ModuleName.ArghamCompany_TaxGoverment).
@@ -425,7 +464,7 @@ namespace TaxServiceAndApp.Models
                     //client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
                     var content = new StringContent(jloginUserRequest, Encoding.UTF8, "application/json");
-                    var res = await client.PostAsync(BMain.SrvInfo.API_URL + "/Auth/SignIn",
+                    var res = await client.PostAsync(BuildRimaApiUri("Auth/SignIn"),
                         content);
                     //HttpResponseMessage res = await client.SendAsync(request);
                     ClsTools.Logger.NPSLogger.GetLogger(ClsTools.Logger.ModuleName.ArghamCompany_TaxGoverment).
@@ -453,7 +492,7 @@ namespace TaxServiceAndApp.Models
                         var signup = await SignUp();
                         if (signup)
                         {
-                            res = await client.PostAsync(BMain.SrvInfo.API_URL + "/Auth/SignIn",
+                            res = await client.PostAsync(BuildRimaApiUri("Auth/SignIn"),
                         content);
                             ClsTools.Logger.NPSLogger.GetLogger(ClsTools.Logger.ModuleName.ArghamCompany_TaxGoverment).
                          LogInfoMessage($"BaranDB:{MethodBase.GetCurrentMethod().DeclaringType.Name}::"
@@ -903,7 +942,7 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
             //            return result;
         }
         public async Task<List<GeneralInvoiceHeaderViewModel>> 
-            GetAllInvoiceByInqFromServer(SearchParameters search)
+            GetAllInvoiceByInqFromServer(SearchParameters search, string? operationId = null)
         {
             List<GeneralInvoiceHeaderViewModel> list = new List<GeneralInvoiceHeaderViewModel>();
             try
@@ -915,23 +954,15 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
 .LogInfoMessage($"::TissService::" +
 $"PostAsync:model::" + list.Count.ToString());
 
-                list = list.Where(a => !string.IsNullOrEmpty(a.ReferenceNumber) ||
-                !string.IsNullOrEmpty(a.fTaxHistoryReferenceNumber)
-                || !string.IsNullOrEmpty(a.taxReferenceNumber)).ToList();
-
-                ClsTools.Logger.NPSLogger.GetLogger(ClsTools.Logger.ModuleName.ArghamCompany_TaxGoverment)
-.LogInfoMessage($"::TissService::" +
-$"PostAsync:model::" + list.Count.ToString());
-
                 if (list != null && list.Any() && list.Count > 0)
-                    list = await GetInvoiceStatusByReferenceListEnhanced(list);
+                    list = await GetInvoiceStatusByReferenceListEnhanced(list, operationId);
             }
             catch (Exception ex)
             {
                 ClsTools.Logger.NPSLogger.GetLogger(ClsTools.Logger.ModuleName.ArghamCompany_TaxGoverment)
 .LogError($"::TissService::" +
 $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
-
+                throw;
             }
             return list;
 
@@ -944,7 +975,7 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
 
 
         public async Task<List<GeneralInvoiceHeaderViewModel>>
-            GetInvoiceStatusByReferenceListEnhanced(List<GeneralInvoiceHeaderViewModel> models)
+            GetInvoiceStatusByReferenceListEnhanced(List<GeneralInvoiceHeaderViewModel> models, string? operationId = null)
         {
             ResultModel result = new ResultModel();
 
@@ -962,18 +993,53 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
 
                     using (var client = new HttpClient { Timeout = TimeSpan.FromMinutes(5) })
                     {
-                        client.BaseAddress = new Uri(BMain.SrvInfo.API_URL);
+                        client.BaseAddress = BuildRimaApiUri();
                         client.DefaultRequestHeaders.Add("X-OrgId", BMain.SrvInfo.MEMORY_ID); // New header
                         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", BMain.SrvInfo.FILE_KEY_PRIVATE.Trim());
 
-                        var references = models.Where(a => a.fSendState == 2).Select(m => m.fTaxHistoryReferenceNumber).ToList();
+                        var references = models
+                            .Where(a => a.fSendState == 2)
+                            .Select(GetInquiryReference)
+                            .Where(reference => Guid.TryParse(reference, out _))
+                            .Distinct()
+                            .ToList();
+
+                        if (references.Count == 0)
+                        {
+                            var processed = 0;
+                            var succeeded = 0;
+                            var failed = 0;
+                            foreach (var model in models)
+                            {
+                                model.WasQueriedFromTaxService = false;
+                                model.InquiryFailed = model.fSendState == 2;
+                                model.InqMessage = model.InquiryFailed
+                                    ? "فاکتور شماره مرجع معتبر برای استعلام ندارد."
+                                    : model.fListOfErrorCaption;
+                                processed++;
+                                if (model.fSendState == 4) succeeded++;
+                                if (model.fSendState == 3 || model.InquiryFailed) failed++;
+
+                                await SendOperationProgressAsync(
+                                    "SendToTaxInq",
+                                    operationId,
+                                    "وضعیت ثبت‌شده فاکتور شماره " + model.RealInvoiceNumber + " بررسی شد.",
+                                    processed,
+                                    models.Count,
+                                    succeeded,
+                                    failed,
+                                    processed == models.Count);
+                            }
+                            return models;
+                        }
+
                         InqueryInvoiceBulk inqueryInvoice = new InqueryInvoiceBulk();
                         inqueryInvoice.ids = references;
                         var jsonRefs = JsonSerializer.Serialize(inqueryInvoice);
 
                         var content = new StringContent(jsonRefs, Encoding.UTF8, "application/json");
 
-                        var response = await client.PostAsync($"{BMain.SrvInfo.API_URL}/Invoice/Inquiry", content);
+                        var response = await client.PostAsync(BuildRimaApiUri("Invoice/Inquiry"), content);
                         ClsTools.Logger.NPSLogger.GetLogger(ClsTools.Logger.ModuleName.ArghamCompany_TaxGoverment)
               .LogInfoMessage($"::TissService::" +
                          $"PostAsync:StatusCode: " + response.StatusCode);
@@ -986,22 +1052,39 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
                             result.Success = true;
                             var responseData = await response.Content.ReadAsStringAsync();
                             var inquiries = JsonConvert.DeserializeObject<InvoiceInquiryViewModelIListResult>(responseData);
-                            int countofAll = inquiries.data.Count;
+                            int countofAll = models.Count;
                             int countofSend = 0;
+                            int countofSuccess = 0;
+                            int countofFailed = 0;
                             using (var npsContext = new NPSGeneralContext())
 
                                 foreach (var model in models)
                                 {
                                     string status = "";
-
-                                    var inquiry = inquiries.data.FirstOrDefault(a => a.id == Guid.Parse(model.fTaxHistoryReferenceNumber));
+                                    model.WasQueriedFromTaxService = false;
+                                    model.InquiryFailed = false;
+                                    var reference = GetInquiryReference(model);
+                                    var hasValidReference = Guid.TryParse(reference, out var referenceId);
+                                    var inquiry = hasValidReference
+                                        ? inquiries.data.FirstOrDefault(a => a.id == referenceId)
+                                        : null;
                                     if (inquiry == null)
                                     {
                                         model.InqMessage = model.fListOfErrorCaption;
                                         status = model.SendStatStr;
+                                        if (model.fSendState == 2)
+                                        {
+                                            model.InquiryFailed = hasValidReference;
+                                            model.InqMessage = hasValidReference
+                                                ? "پاسخی برای شماره مرجع فاکتور دریافت نشد."
+                                                : "فاکتور شماره مرجع معتبر برای استعلام ندارد.";
+                                        }
                                     }
                                     else
                                     {
+                                        model.WasQueriedFromTaxService = true;
+                                        if (string.IsNullOrWhiteSpace(model.fTaxHistoryReferenceNumber))
+                                            model.fTaxHistoryReferenceNumber = reference;
                                         //var model = models.FirstOrDefault(m => m.fTaxHistoryReferenceNumber == inquiry.referenceNumber);
                                         //if (model == null) continue;
                                         ClsTools.Logger.NPSLogger.GetLogger(ClsTools.Logger.ModuleName.ArghamCompany_TaxGoverment)
@@ -1045,13 +1128,19 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
                                                 break;
 
                                             case "gatewaytimeout":
-                                                result.Message = $"Gateway Timeout: {inquiry.data.error.FirstOrDefault()?.message}";
+                                                status = "عدم دریافت پاسخ";
+                                                model.InquiryFailed = true;
+                                                model.InqMessage = "زمان انتظار برای پاسخ استعلام این فاکتور به پایان رسید.";
+                                                result.Message = model.InqMessage;
                                                 result.Success = false;
                                                 break;
 
                                             case "ORG_NOT_FOUND":
                                             default:
                                                 status = "فاکتور پیدا نشد";
+                                                model.fSendState = 3;
+                                                model.InquiryFailed = true;
+                                                model.fListOfErrorCaption = "فاکتور در سامانه مودیان پیدا نشد.";
                                                 {
                                                     var errror = new errorDetail()
                                                     {
@@ -1073,7 +1162,7 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
                                                     {
                                                         taxhistory.fListOfErrorCaption =
                                                             string.Join('-', "فاکتور پیدا نشد!");
-                                                        //taxhistory.fSendState = 1;
+                                                        taxhistory.fSendState = 3;
 
                                                         taxhistory.fListOfErrorCode =
                                                             string.Join('-', "فاکتور پیدا نشد!");
@@ -1093,24 +1182,39 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
 
                                     }
 
-                                    var message = "فاکتور شماره " + model.InvoiceNumberSt + " با موفقیت احراز شد. \r\n" +
-                                               "وضعیت ثبت: " + status + "\r\n " +
-                                                   "\r\n تعداد : " + countofSend +
-                                                  " از " + countofAll;
-
-                                    await BMain._hubContext.Clients.All.SendAsync("SendToTaxInq", message);
                                     countofSend++;
+                                    if (model.fSendState == 4) countofSuccess++;
+                                    if (model.fSendState == 3 || model.InquiryFailed || (model.fSendState == 2 && !hasValidReference))
+                                        countofFailed++;
+
+                                    var message = "فاکتور شماره " + model.RealInvoiceNumber +
+                                                  " بررسی شد. وضعیت: " + status;
+                                    await SendOperationProgressAsync(
+                                        "SendToTaxInq",
+                                        operationId,
+                                        message,
+                                        countofSend,
+                                        countofAll,
+                                        countofSuccess,
+                                        countofFailed,
+                                        countofSend == countofAll);
                                 }
                         }
                         else
                         {
+                            var message = $"سرویس ریما پاسخ معتبری برای استعلام فاکتورها برنگرداند (کد {(int)response.StatusCode}).";
                             foreach (var item in models)
                             {
-                                if (item.fSendState != 2)
-                                {
-                                    item.InqMessage = item.fListOfErrorCaption;
-                                }
+                                item.WasQueriedFromTaxService = false;
+                                item.InqMessage = item.fSendState == 2 ? message : item.fListOfErrorCaption;
+                                item.InquiryFailed = item.fSendState == 2;
                             }
+
+                            await GetOperationClients(operationId).SendAsync("SendToTaxEventsError", new
+                            {
+                                operationId,
+                                message
+                            });
                         }
                     }
                 else
@@ -1118,11 +1222,20 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
                     //SendError
                     var message = "ارتباط با سامانه مودیان برقرار نشد";
 
-                    await BMain._hubContext.Clients.All.SendAsync("SendToTaxEventsError", message);
+                    await GetOperationClients(operationId).SendAsync("SendToTaxEventsError", new
+                    {
+                        operationId,
+                        message
+                    });
 
                     result.Success = false;
                     result.Message = "ارتباط با سامانه مودیان برقرار نشد";
-                    return null;
+                    foreach (var model in models.Where(a => a.fSendState == 2))
+                    {
+                        model.InquiryFailed = true;
+                        model.InqMessage = result.Message;
+                    }
+                    return models;
                 }
 
             }
@@ -1134,10 +1247,30 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
 
                 result.Success = false;
                 result.Data = ex;
-                result.Message = ex.Message;
+                result.Message = GetPersianRimaError(ex, "استعلام فاکتورها");
+                foreach (var model in models.Where(a => a.fSendState == 2))
+                {
+                    model.InquiryFailed = true;
+                    model.InqMessage = result.Message;
+                }
+
+                await GetOperationClients(operationId).SendAsync("SendToTaxEventsError", new
+                {
+                    operationId,
+                    message = GetPersianRimaError(ex, "استعلام فاکتورها")
+                });
             }
 
             return models;
+        }
+
+        private static string? GetInquiryReference(GeneralInvoiceHeaderViewModel model)
+        {
+            if (!string.IsNullOrWhiteSpace(model.fTaxHistoryReferenceNumber))
+                return model.fTaxHistoryReferenceNumber;
+            if (!string.IsNullOrWhiteSpace(model.taxReferenceNumber))
+                return model.taxReferenceNumber;
+            return model.ReferenceNumber;
         }
 
 
@@ -1211,6 +1344,9 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
             }
 
             model.InqMessage = "فاکتور با موفقیت ثبت شده است.";
+            model.fSendState = 4;
+            model.fListOfErrorCaption = "ثبت موفق";
+            model.fListOfErrorCode = "ثبت موفق";
         }
 
         private async Task HandleFailedAsync(GeneralInvoiceHeaderViewModel model, InvoiceInquiryViewModel inquiry, NPSGeneralContext npsContext)
@@ -1339,6 +1475,9 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
             _context.TaxGovermentInvoiceFinalInsertUpdate(model.InvoiceId, "FAILED", 0, inquiry.id.ToString(), model.fTaxHistoryReferenceNumber);
 
             model.InqMessage = $"فاکتور به دلیل این خطاها ثبت نگردید : {errorMessages}";
+            model.fSendState = 3;
+            model.fListOfErrorCaption = string.IsNullOrWhiteSpace(errorMessages) ? "ثبت فاکتور با خطا مواجه شد." : errorMessages;
+            model.fListOfErrorCode = string.Join('-', inquiry.data.error.Select(a => a.code).ToArray()) ?? "-";
         }
 
         private async Task HandlePendingAsync(GeneralInvoiceHeaderViewModel model, InvoiceInquiryViewModel inquiry)
@@ -1400,6 +1539,9 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
                 await npsContext.SaveChangesAsync();
             }
             model.InqMessage = "صورتحساب هنوز اعتبارسنجی نشده و در صف بررسی میباشد";
+            model.fSendState = 2;
+            model.fListOfErrorCaption = "درحال بررسی";
+            model.fListOfErrorCode = "درحال بررسی";
         }
 
         public Task GetNotFinishedLastRefrenceIdAsync()
@@ -1446,7 +1588,7 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
 
                         //var content = new StringContent(invoice.ToString(), Encoding.UTF8, "application/json");
                         //var res = client.PostAsync("api/invoices/async", content).Result;
-                        HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, BMain.SrvInfo.API_URL + "invoices/async")
+                        HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, BuildRimaApiUri("invoices/async"))
                         {
                             Content = new StringContent(data.ToString(), null, "application/json")
                         };
@@ -1526,7 +1668,7 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
                 using (var client = new HttpClient())
                 {
                     client.Timeout = new TimeSpan(0, 5, 0);
-                    client.BaseAddress = new Uri(BMain.SrvInfo.API_URL);
+                    client.BaseAddress = BuildRimaApiUri();
 
                     client.DefaultRequestHeaders.Add("X-OrgId", BMain.SrvInfo.MEMORY_ID);  //New 
 
@@ -1538,7 +1680,7 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
 
 
                     var content = new StringContent(jrefs.ToString(), Encoding.UTF8, "application/json");
-                    var res = await client.PostAsync(BMain.SrvInfo.API_URL + "inquiry/byInvoiceId",
+                    var res = await client.PostAsync(BuildRimaApiUri("inquiry/byInvoiceId"),
                         content);
                     if (res != null)
                     {
@@ -1605,7 +1747,7 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
 
                 result.Success = false;
                 result.Data = ex;
-                result.Message = ex.Message;
+                result.Message = GetPersianRimaError(ex, "ارسال گروهی فاکتورها");
                 //_logger.LogError("TisService SendInvoiceAsync:" + ex.ToString());
             }
             return result;
@@ -1628,26 +1770,53 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
             return list;
         }
         public static SemaphoreSlim _SemaphoreSlimForLimitSend = new SemaphoreSlim(10);
-        public int countofSend;
-        public int countofAll;
 
         public static SemaphoreSlim _SemaphoreSlimForLimitSendForGrouping
             = new SemaphoreSlim(10);
-        public static int countofSendForGrouping;
-        public static int countofAllForGrouping;
-        public static int countofSentForGrouping; // شمارش تجمعی فاکتورهای «ارسال‌شده» برای نمایش پیشرفت «X از کل»
+        private sealed class OperationProgress
+        {
+            public int Total { get; init; }
+            public int Processed;
+            public int Succeeded;
+            public int Failed;
+            public object SyncRoot { get; } = new object();
+        }
+
+        private const string UnscopedOperationGroup = "__rima_unscoped_operations__";
+
+        private static IClientProxy GetOperationClients(string? operationId)
+        {
+            // عملیات زمان‌بندی‌شده یا کلاینت قدیمی نباید پیام خود را روی صفحه همه کاربران پخش کند.
+            return BMain._hubContext.Clients.Group(
+                string.IsNullOrWhiteSpace(operationId) ? UnscopedOperationGroup : operationId);
+        }
+
+        private static Task SendOperationProgressAsync(
+            string eventName,
+            string? operationId,
+            string message,
+            int processed,
+            int total,
+            int succeeded,
+            int failed,
+            bool completed = false)
+        {
+            return GetOperationClients(operationId).SendAsync(eventName, new
+            {
+                operationId,
+                message,
+                processed,
+                total,
+                succeeded,
+                failed,
+                completed
+            });
+        }
         public const int MaxBatchSizeInBytes = 2 * 1024 * 1024;
         public const int MaxCurrentCount = 10;
-        public async Task<ResultModel> SendGroupInvoicesForGroupingAsync(List<DTOInvoiceLimitParameter> ids)
+        public async Task<ResultModel> SendGroupInvoicesForGroupingAsync(List<DTOInvoiceLimitParameter> ids, string? operationId = null)
         {
             var result = new ResultModel { Count = 0, Success = false };
-//            INFO - BaranDB :ExecCommandToObject: Exec dbo.Usp_TaxCartable_DetailInfo N'3feb3182-9d49-4aa3-88f9-01926f9316a4',N'2',N'10'
-//2026 - 04 - 13 13:04:18,441[8] ERROR - BaranDB:< SendGroupInvoicesForGroupingAsync > d__34::Error: Object reference not set to an instance of an object.
-//2026 - 04 - 13 13:04:18,442[8] ERROR - Object reference not set to an instance of an object.
-//System.NullReferenceException: Object reference not set to an instance of an object.
-//   at TaxServiceAndApp.Models.RimaServiceCalculateMethod.GetInvoice(DTOInvoiceLimitParameter invoice, Boolean isCancel) in D:\4Ashkan\TaxGovermentService\TaxWebAppCore8\BI\RimaServiceCalculateMethod.cs:line 139
-//   at TaxServiceAndApp.Models.RimaServiceCalculateMethod.GetSerializedInvoiceAsync(DTOInvoiceLimitParameter invoice, Boolean isCancel) in D:\4Ashkan\TaxGovermentService\TaxWebAppCore8\BI\RimaServiceCalculateMethod.cs:line 1766
-//   at TaxServiceAndApp.Models.RimaServiceCalculateMethod.SendGroupInvoicesForGroupingAsync(List`1 ids) in D:\4Ashkan\TaxGovermentService\TaxWebAppCore8\BI\RimaServiceCalculateMethod.cs:line 1651
 
             // --- متغیرهای محلی برای جلوگیری از state sharing در concurrent calls ---
             var invoiceMetadata = new Dictionary<Guid, DTOInvoiceLimitParameter>();
@@ -1662,13 +1831,7 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
                     }
                 }
             }
-            var countOfAll = ids.Count;
-            var countOfAllForGrouping = ids.Count;
-            var countOfSendForGrouping = 0;
-            var countOfSend = 0;
-            // شمارنده تجمعی ارسال برای نمایش پیشرفت «X از کل» (پیام SignalR سراسری/Clients.All است)
-            countofSentForGrouping = 0;
-            countofAllForGrouping = ids.Count;
+            var progress = new OperationProgress { Total = ids.Count };
             var idsSnapshot = ids;
             try
             {
@@ -1685,7 +1848,7 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
                         if (!Guid.TryParse(item.InvoiceID, out var invoiceGuid))
                         {
                             logger.LogInfoMessage($"Invalid InvoiceID: {item.InvoiceID}");
-                            countOfAll--;
+                            await MarkFailedAsync(progress, operationId, "شناسه یکی از فاکتورها معتبر نیست.");
                             continue;
                         }
 
@@ -1698,7 +1861,7 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
 
                         if (isStatusValid)
                         {
-                            var serializedInvoice = await GetSerializedInvoiceAsync(item, false);
+                            var serializedInvoice = await GetSerializedInvoiceAsync(item, false, progress, operationId);
                             if (serializedInvoice != null)
                             {
                                 invoiceDataMap[item.InvoiceGuidID] = serializedInvoice;
@@ -1713,12 +1876,12 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
                             }
                             else
                             {
-                                countOfAll--;
+                                await MarkFailedAsync(progress, operationId, "یکی از فاکتورها به دلیل اطلاعات ناقص آماده ارسال نشد.");
                             }
                         }
                         else
                         {
-                            countOfAll--;
+                            await MarkFailedAsync(progress, operationId, "یکی از فاکتورها قبلاً ارسال شده یا وضعیت قابل ارسال ندارد.");
                         }
                     }
                 }
@@ -1769,24 +1932,151 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
                 {
                     // Capture batch and map for closure safety
                     var capturedBatch = batch;
-                    tasks.Add(SendBatchWithThrottlingAsync(capturedBatch, invoiceDataMap, invoiceMetadata, semaphore));
+                    tasks.Add(SendBatchWithThrottlingAsync(capturedBatch, invoiceDataMap, invoiceMetadata, semaphore, progress, operationId));
                 }
 
                 await Task.WhenAll(tasks).ConfigureAwait(false);
 
-                result.Success = true;
-                result.Count = invoiceDataMap.Count;
+                result.Success = progress.Failed == 0 && progress.Processed == progress.Total;
+                result.Count = progress.Succeeded;
+                result.Message = result.Success
+                    ? "همه فاکتورها با موفقیت ارسال شدند."
+                    : $"عملیات پایان یافت؛ {progress.Succeeded} فاکتور موفق و {progress.Failed} فاکتور ناموفق بود.";
             }
             catch (Exception ex)
             {
                 var logger = ClsTools.Logger.NPSLogger.GetLogger(ClsTools.Logger.ModuleName.ArghamCompany_TaxGoverment);
                 logger.LogError($"BaranDB:{MethodBase.GetCurrentMethod().DeclaringType.Name}:: Error: {ex.Message}", ex);
-                result.Message = ex.Message;
+                result.Message = GetPersianRimaError(ex, "ارسال گروهی فاکتورها");
                 result.Data = ex;
                 result.Success = false;
+                await MarkFailedAsync(
+                    progress,
+                    operationId,
+                    "ارسال فاکتورها پیش از تکمیل با خطا متوقف شد.",
+                    Math.Max(0, progress.Total - progress.Processed));
             }
 
             return result;
+        }
+
+        private static async Task MarkFailedAsync(OperationProgress progress, string? operationId, string message, int count = 1)
+        {
+            await MarkProgressAsync(progress, operationId, message, false, count);
+        }
+
+        private static async Task MarkSucceededAsync(OperationProgress progress, string? operationId, string message)
+        {
+            await MarkProgressAsync(progress, operationId, message, true, 1);
+        }
+
+        private static async Task MarkProgressAsync(
+            OperationProgress progress,
+            string? operationId,
+            string message,
+            bool succeeded,
+            int count)
+        {
+            int processed;
+            int succeededCount;
+            int failedCount;
+            int appliedCount;
+            lock (progress.SyncRoot)
+            {
+                appliedCount = Math.Min(Math.Max(0, count), Math.Max(0, progress.Total - progress.Processed));
+                progress.Processed += appliedCount;
+                if (succeeded) progress.Succeeded += appliedCount;
+                else progress.Failed += appliedCount;
+
+                processed = progress.Processed;
+                succeededCount = progress.Succeeded;
+                failedCount = progress.Failed;
+            }
+
+            if (appliedCount == 0)
+                return;
+
+            await SendOperationProgressAsync(
+                "SendToTaxState",
+                operationId,
+                message,
+                processed,
+                progress.Total,
+                succeededCount,
+                failedCount,
+                processed >= progress.Total);
+        }
+
+        private static Dictionary<string, Queue<Guid>> BuildInvoiceIdLookup(
+            Dictionary<Guid, string> invoiceBatchData)
+        {
+            var lookup = new Dictionary<string, Queue<Guid>>(StringComparer.OrdinalIgnoreCase);
+            foreach (var invoiceData in invoiceBatchData)
+            {
+                try
+                {
+                    var invoice = JsonSerializer.Deserialize<InvoiceInputModel>(invoiceData.Value);
+                    var invoiceNumber = invoice?.header?.inno?.Trim();
+                    if (string.IsNullOrWhiteSpace(invoiceNumber))
+                        continue;
+
+                    if (!lookup.TryGetValue(invoiceNumber, out var invoiceIds))
+                    {
+                        invoiceIds = new Queue<Guid>();
+                        lookup[invoiceNumber] = invoiceIds;
+                    }
+                    invoiceIds.Enqueue(invoiceData.Key);
+                }
+                catch
+                {
+                    // اگر داده سریال‌شده قابل خواندن نباشد، در پایان batch ناموفق شمرده می‌شود.
+                }
+            }
+            return lookup;
+        }
+
+        private static bool TryTakeInvoiceId(
+            Dictionary<string, Queue<Guid>> lookup,
+            string? invoiceNumber,
+            out Guid invoiceId)
+        {
+            invoiceId = Guid.Empty;
+            if (string.IsNullOrWhiteSpace(invoiceNumber) ||
+                !lookup.TryGetValue(invoiceNumber.Trim(), out var invoiceIds) ||
+                invoiceIds.Count == 0)
+                return false;
+
+            invoiceId = invoiceIds.Dequeue();
+            return true;
+        }
+
+        private static async Task SaveSendFailureAsync(
+            Guid invoiceId,
+            DTOInvoiceLimitParameter invoiceMetadata,
+            string message)
+        {
+            using var context = new NPSGeneralContext();
+            var taxHistory = await context.tTaxHistoryStateParallels
+                .FirstOrDefaultAsync(item => item.fInvoiceID == invoiceId);
+            if (taxHistory == null)
+            {
+                taxHistory = new tTaxHistoryStateParallel
+                {
+                    fInvoiceID = invoiceId
+                };
+            }
+
+            taxHistory.fLastSendDate = DateTime.Now;
+            taxHistory.fSendState = 3;
+            taxHistory.fListOfErrorCaption = string.IsNullOrWhiteSpace(message)
+                ? "ارسال فاکتور توسط سرویس ریما رد شد."
+                : message;
+            taxHistory.fListOfErrorCode = "RIMA_SEND_FAILED";
+            if (string.IsNullOrWhiteSpace(taxHistory.fTaxID))
+                taxHistory.fTaxID = invoiceMetadata.TaxGuid;
+
+            context.tTaxHistoryStateParallels.AddOrUpdate(item => item.fID, taxHistory);
+            await context.SaveChangesAsync();
         }
 
         // --- متد کمکی برای مدیریت semaphore بدون Task.Run ---
@@ -1794,12 +2084,14 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
             List<Guid> batch,
             Dictionary<Guid, string> invoiceDataMap,
             Dictionary<Guid, DTOInvoiceLimitParameter> invoiceMetadata, 
-            SemaphoreSlim semaphore)
+            SemaphoreSlim semaphore,
+            OperationProgress progress,
+            string? operationId)
         {
             await semaphore.WaitAsync().ConfigureAwait(false);
             try
             {
-                await SendBatchAsync(batch, invoiceDataMap, invoiceMetadata).ConfigureAwait(false);
+                await SendBatchAsync(batch, invoiceDataMap, invoiceMetadata, progress, operationId).ConfigureAwait(false);
             }
             finally
             {
@@ -1807,7 +2099,11 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
             }
         }
 
-        public async Task<string> GetSerializedInvoiceAsync(DTOInvoiceLimitParameter invoice, bool isCancel)
+        private async Task<string> GetSerializedInvoiceAsync(
+            DTOInvoiceLimitParameter invoice,
+            bool isCancel,
+            OperationProgress? progress = null,
+            string? operationId = null)
         {
             ClsTools.Logger.NPSLogger.GetLogger(ClsTools.Logger.ModuleName.ArghamCompany_TaxGoverment).
     LogInfoMessage($"BaranDB:{MethodBase.GetCurrentMethod().DeclaringType.Name}::"
@@ -1828,6 +2124,14 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
                        npsContext.tTaxHistoryStateParallels.FirstOrDefaultAsync(a => a.fInvoiceID
                         == GuidID);
 
+                    if (taxhistory == null)
+                    {
+                        taxhistory = new tTaxHistoryStateParallel
+                        {
+                            fInvoiceID = GuidID,
+                            fLastSendDate = DateTime.Now
+                        };
+                    }
                     {
                         taxhistory.fListOfErrorCaption =
                             "یکی از اقلام شناسه کالا ندارد!";
@@ -1880,15 +2184,22 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
             try
             {
 
-                Interlocked.Increment(ref countofSend); // Safely increment count
                 var message = @"فاکتور به شماره: " + CurrentInvoice.header.inno +
                                     " و مبلغ :" + CurrentInvoice.header.tprdis +
-                                    " با موفقیت بارگذاری گردید. "
-                                    + "\r\n تعداد : " + countofSend +
-                                    " از " + countofAll +
+                                    " با موفقیت برای ارسال آماده شد. " +
                                     " :: زمان صرف شده: " + timespan.ToString() + " ثانیه";
 
-                await BMain._hubContext.Clients.All.SendAsync("SendToTaxEvents", message);
+                if (progress == null)
+                    await GetOperationClients(operationId).SendAsync("SendToTaxEvents", message);
+                else
+                    await SendOperationProgressAsync(
+                        "SendToTaxEvents",
+                        operationId,
+                        message,
+                        progress.Processed,
+                        progress.Total,
+                        progress.Succeeded,
+                        progress.Failed);
 
             }
             catch (Exception ex)
@@ -1903,8 +2214,8 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
         }
 
         // Send a batch of invoices based on their serialized data
-        public async Task SendBatchAsync(List<Guid> batch, Dictionary<Guid, string> invoiceDataMap,
-            Dictionary<Guid, DTOInvoiceLimitParameter> invoiceMetadata)
+        private async Task SendBatchAsync(List<Guid> batch, Dictionary<Guid, string> invoiceDataMap,
+            Dictionary<Guid, DTOInvoiceLimitParameter> invoiceMetadata, OperationProgress progress, string? operationId)
         {
             await _SemaphoreSlimForLimitSendForGrouping.WaitAsync();
             try
@@ -1925,7 +2236,7 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
                 {
                     // Send the batch of invoices to the API
                     // await SendInvoiceBatchAsync(invoiceDataList);
-                    await SendInvoiceBatchAsync(invoiceBatchData, invoiceMetadata);
+                    await SendInvoiceBatchAsync(invoiceBatchData, invoiceMetadata, progress, operationId);
                 }
             }
             catch (Exception ex)
@@ -1942,11 +2253,16 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
         }
 
         // Method to send a batch of serialized invoice data
-        public async Task<ResultModel> SendInvoiceBatchAsync
+        private async Task<ResultModel> SendInvoiceBatchAsync
             (Dictionary<Guid, string> invoiceBatchData,
-            Dictionary<Guid, DTOInvoiceLimitParameter> invoiceMetadata)
+            Dictionary<Guid, DTOInvoiceLimitParameter> invoiceMetadata,
+            OperationProgress progress,
+            string? operationId)
         {
             ResultModel result = new ResultModel();
+            var invoiceIdLookup = BuildInvoiceIdLookup(invoiceBatchData);
+            var accountedInvoiceIds = new HashSet<Guid>();
+            var failedInvoiceIds = new HashSet<Guid>();
             try
             {
                 // Combine the serialized invoice data into a JSON array string
@@ -1964,7 +2280,7 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
                         client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
                         var content = new StringContent(combinedData, Encoding.UTF8, "application/json");
-                        var res = await client.PostAsync(BMain.SrvInfo.API_URL + "/Invoice/Send",
+                        var res = await client.PostAsync(BuildRimaApiUri("Invoice/Send"),
                             content);
                         //HttpResponseMessage res = await client.SendAsync(request);
                         ClsTools.Logger.NPSLogger.GetLogger(ClsTools.Logger.ModuleName.ArghamCompany_TaxGoverment).
@@ -1983,16 +2299,53 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
                                     try
                                     {
                                         countofSendTiss++;
-                                        var referenceNumber = r.data.id;
+                                        var responseInvoiceNumber = r.data?.inno;
                                         ClsTools.Logger.NPSLogger.GetLogger(ClsTools.Logger.ModuleName.ArghamCompany_TaxGoverment).
                             LogInfoMessage($"BaranDB:{MethodBase.GetCurrentMethod().DeclaringType.Name}::"
-                        + " Send ::" + referenceNumber);
-                                        var currentFactor = bodyDtoSysDTOs.FirstOrDefault
-                                            (a => a.Header.Inno == r.data.inno);
-                                        //var invoicejson = invoiceBatchData.FirstOrDefault(a => a.Key == currentFactor.Header.InvoiceId).Value;
+                        + " Send ::" + r.data?.id);
+                                        if (!TryTakeInvoiceId(invoiceIdLookup, responseInvoiceNumber, out var invoiceId))
+                                            throw new InvalidOperationException("شماره فاکتور پاسخ ریما با فاکتورهای batch تطبیق نداشت.");
 
-                                        var invoiceId = invoiceBatchData.FirstOrDefault(x => x.Value.Contains(r.data.inno)).Key;
-                                        var invoicejson = invoiceBatchData.FirstOrDefault(x => x.Value.Contains(r.data.inno)).Value;
+                                        var invoicejson = invoiceBatchData[invoiceId];
+                                        var responseMessage = r.messages == null
+                                            ? ""
+                                            : string.Join(" | ", r.messages.Where(item => !string.IsNullOrWhiteSpace(item)));
+
+                                        if (!r.isSuccess || r.data?.id == null)
+                                        {
+                                            if (accountedInvoiceIds.Add(invoiceId))
+                                            {
+                                                failedInvoiceIds.Add(invoiceId);
+                                                await MarkFailedAsync(
+                                                    progress,
+                                                    operationId,
+                                                    string.IsNullOrWhiteSpace(responseMessage)
+                                                        ? "ارسال یک فاکتور توسط سرویس ریما رد شد."
+                                                        : responseMessage);
+
+                                                if (invoiceMetadata.TryGetValue(invoiceId, out var failedInvoiceMetadata))
+                                                {
+                                                    try
+                                                    {
+                                                        await SaveSendFailureAsync(invoiceId, failedInvoiceMetadata, responseMessage);
+                                                    }
+                                                    catch (Exception persistenceException)
+                                                    {
+                                                        ClsTools.Logger.NPSLogger.GetLogger(ClsTools.Logger.ModuleName.ArghamCompany_TaxGoverment)
+                                                            .LogError(
+                                                                $"ثبت وضعیت ردشدن فاکتور {invoiceId} در دیتابیس انجام نشد.",
+                                                                persistenceException);
+                                                    }
+                                                }
+                                            }
+                                            result.Success = false;
+                                            result.Message = string.IsNullOrWhiteSpace(responseMessage)
+                                                ? "ارسال یک یا چند فاکتور توسط سرویس ریما رد شد."
+                                                : responseMessage;
+                                            continue;
+                                        }
+
+                                        var referenceNumber = r.data.id;
                                         try
                                         {
                                             ClsTools.Logger.NPSLogger.GetLogger(ClsTools.Logger.ModuleName.ArghamCompany_TaxJsonResultOfTiss).
@@ -2073,19 +2426,15 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
                                                     _ = BMain.ScheduleOperationAsync(invoiceId.ToString());
                                                 }
 
-                                                Interlocked.Increment(ref countofSentForGrouping); // شمارش تجمعی کل فاکتورهای ارسال‌شده
-                                                var message = @"فاکتور به شماره: " + r.data.inno +
-                                                   " با موفقیت ثبت گردید. "
-                                                   + "\r\n تعداد ارسال‌شده : " + countofSentForGrouping +
-                                                   " از " + countofAllForGrouping;
+                                                var message = @"فاکتور به شماره: " + responseInvoiceNumber +
+                                                   " با موفقیت ثبت گردید.";
 
-
-                                                await BMain._hubContext.Clients.All.SendAsync("SendToTaxState", message);
+                                                if (accountedInvoiceIds.Add(invoiceId))
+                                                    await MarkSucceededAsync(progress, operationId, message);
                                             }
                                         }
-
-                                        result.Success = true;
-                                        result.Message = "با موفقیت ثبت شد.";
+                                        if (failedInvoiceIds.Count == 0)
+                                            result.Message = "با موفقیت ثبت شد.";
                                     }
                                     catch (Exception ef)
                                     {
@@ -2094,6 +2443,18 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
              + "  ::" + ef.Message + "::" + ef.InnerException?.Message, ef);
                                     }
                                 }
+
+                            var missingResults = Math.Max(0, invoiceBatchData.Count - accountedInvoiceIds.Count);
+                            if (missingResults > 0)
+                                await MarkFailedAsync(
+                                    progress,
+                                    operationId,
+                                    "برای بخشی از فاکتورها پاسخ نهایی قابل پردازش دریافت نشد.",
+                                    missingResults);
+
+                            result.Success = failedInvoiceIds.Count == 0 && missingResults == 0;
+                            if (!result.Success && string.IsNullOrWhiteSpace(result.Message))
+                                result.Message = "ارسال یک یا چند فاکتور کامل نشد.";
                         }
                         else
                         {
@@ -2117,13 +2478,19 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
                             var resultOfSend = await res.Content.ReadAsStringAsync();
                             result.Success = false;
                             result.Message = "ارتباط با سامانه مودیان برقرار نشد";
+                            await MarkFailedAsync(progress, operationId, result.Message, invoiceBatchData.Count);
                         }
                     }
                 else
                 {
                     //SendError
                     var message = "ارتباط با سامانه مودیان برقرار نشد";
-                    await BMain._hubContext.Clients.All.SendAsync("SendToTaxEventsError", message);
+                    await MarkFailedAsync(progress, operationId, message, invoiceBatchData.Count);
+                    await GetOperationClients(operationId).SendAsync("SendToTaxEventsError", new
+                    {
+                        operationId,
+                        message
+                    });
                     result.Success = false;
                     result.Message = "ارتباط با سامانه مودیان برقرار نشد";
                     return result;
@@ -2133,7 +2500,10 @@ $"PostAsync:model " + ex.Message + ex.InnerException?.Message, ex);
             {
                 result.Success = false;
                 result.Data = ex;
-                result.Message = ex.Message;
+                result.Message = GetPersianRimaError(ex, "ارسال فاکتورها");
+                var remainingInBatch = Math.Max(0, invoiceBatchData.Count - accountedInvoiceIds.Count);
+                if (remainingInBatch > 0)
+                    await MarkFailedAsync(progress, operationId, "ارسال بخشی از فاکتورها با خطا متوقف شد.", remainingInBatch);
                 ClsTools.Logger.NPSLogger.GetLogger(ClsTools.Logger.ModuleName.ArghamCompany_TaxGoverment).
               LogError($"BaranDB:{MethodBase.GetCurrentMethod().DeclaringType.Name}::"
           + "  ::" + ex.Message + "::" + ex.InnerException?.Message, ex);

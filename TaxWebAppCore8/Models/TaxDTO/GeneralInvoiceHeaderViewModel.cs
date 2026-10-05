@@ -18,6 +18,23 @@ namespace TaxServiceAndApp.Models.TaxDTO
         public InvoiceInquiryViewModel? RimaResultModelInquiry { get; set; }
 
         public string InqMessage { get; set; } = "ارسال نشده است!";
+        public bool WasQueriedFromTaxService { get; set; }
+        public bool InquiryFailed { get; set; }
+        public bool HasValidInquiryReference
+        {
+            get
+            {
+                var reference = !string.IsNullOrWhiteSpace(fTaxHistoryReferenceNumber)
+                    ? fTaxHistoryReferenceNumber
+                    : !string.IsNullOrWhiteSpace(taxReferenceNumber)
+                        ? taxReferenceNumber
+                        : ReferenceNumber;
+                return Guid.TryParse(reference, out _);
+            }
+        }
+        public string InquirySource => WasQueriedFromTaxService
+            ? "استعلام‌شده از سامانه مودیان"
+            : "وضعیت ثبت‌شده محلی";
         public string ReferenceNumber { get; set; }
         public bool IsSelected { get; set; } = false;
         public string SendStatStr
