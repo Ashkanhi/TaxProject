@@ -76,6 +76,34 @@ namespace TaxWebAppCore8.BI.Omid
             return token;
         }
 
+        
+        /// <summary>
+        /// درخواست معتبر فاکتور را به امید می‌فرستد
+        /// و پاسخ خام را به مدل قابل‌بررسی تبدیل می‌کند.
+        /// </summary>
+        public async Task<OmidSendResponse> SendInvoiceAsync(
+            OmidSendInvoiceRequest payload,
+            CancellationToken cancellationToken = default)
+        {
+            // قبل از ارتباط شبکه‌ای، دادهٔ ارسالی را بررسی می‌کنیم.
+            OmidTaxService.ValidateForSend(payload);
+
+            // توکن لازم برای ارسال را از سرویس امید می‌گیریم.
+            string token = await LoginAsync(cancellationToken);
+
+            // درخواست را رمزنگاری و امضا کرده، به امید می‌فرستیم.
+            string responseJson = await PostEncryptedAsync(
+                "/api/Invoice/SendInvoice",
+                payload,
+                token,
+                cancellationToken);
+
+            // HTTP موفق به‌تنهایی به معنی پذیرش فاکتور نیست.
+            // Parser نتیجهٔ کسب‌وکار و شناسه‌های پیگیری را جدا می‌کند.
+            return OmidSendResponseParser.Parse(responseJson);
+        }
+
+
         /// <summary>
         /// داده را رمزنگاری و امضا می‌کند و با POST به امید می‌فرستد.
         /// خروجی، متن پاسخ سرور است.

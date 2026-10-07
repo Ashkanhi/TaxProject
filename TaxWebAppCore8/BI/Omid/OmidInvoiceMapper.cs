@@ -43,7 +43,7 @@ namespace TaxWebAppCore8.BI.Omid
             {
                 Header = new OmidInvoiceHeader
                 {
-                    TaxId = sourceHeader.Taxid,
+                    TaxId = string.Empty,
                     Indatim = sourceHeader.Indatim?.ToString(
                         CultureInfo.InvariantCulture),
                     Inty = sourceHeader.Inty,

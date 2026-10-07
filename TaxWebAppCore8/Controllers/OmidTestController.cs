@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using TaxServiceAndApp.BI;
 using TaxWebAppCore8.BI.Omid;
@@ -14,23 +13,29 @@ using TaxWebAppCore8.Models.SharedDTO;
 
 namespace TaxWebAppCore8.Controllers
 {
+    /// <summary>
+    /// کنترلر آزمایش اتصال و پیش‌نمایش درخواست امید.
+    /// فقط در محیط Development قابل استفاده است.
+    /// </summary>
     public class OmidTestController : Controller
     {
+        // کلاینت ارتباط HTTP با امید؛ اینجا برای تست ورود استفاده می‌شود.
         private readonly OmidApiClient _client;
+
+        // مشخص می‌کند برنامه در محیط Development اجرا می‌شود یا نه.
         private readonly IWebHostEnvironment _environment;
-        private readonly OmidConfig _config;
 
         public OmidTestController(
             OmidApiClient client,
-            IWebHostEnvironment environment,
-            IOptions<OmidConfig> options)
+            IWebHostEnvironment environment)
         {
             _client = client;
             _environment = environment;
-            _config = options.Value;
         }
 
-        // صفحه تست فقط در محیط Development در دسترس است.
+        /// <summary>
+        /// صفحهٔ تست امید را نشان می‌دهد.
+        /// </summary>
         [HttpGet]
         public IActionResult Index()
         {
@@ -40,7 +45,9 @@ namespace TaxWebAppCore8.Controllers
             return View();
         }
 
-        // ورود به امید را آزمایش می‌کند؛ توکن را نمایش نمی‌دهد.
+        /// <summary>
+        /// ورود به امید را تست می‌کند، ولی توکن را در پاسخ نمایش نمی‌دهد.
+        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(
@@ -105,8 +112,10 @@ namespace TaxWebAppCore8.Controllers
             }
         }
 
-        // فاکتور را از دیتابیس می‌خواند و JSON امید را می‌سازد.
-        // این متد هیچ درخواستی به API امید ارسال نمی‌کند.
+        /// <summary>
+        /// فاکتور را از دیتابیس می‌خواند و JSON امید را نمایش می‌دهد.
+        /// این متد هیچ فاکتوری به API امید ارسال نمی‌کند.
+        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult PreviewInvoice(
@@ -115,6 +124,7 @@ namespace TaxWebAppCore8.Controllers
             if (!_environment.IsDevelopment())
                 return NotFound();
 
+            // شناسهٔ فاکتور و فروشگاه برای یافتن فاکتور لازم‌اند.
             if (request == null ||
                 !Guid.TryParse(request.InvoiceID, out _) ||
                 !request.StoreID.HasValue)
@@ -128,45 +138,15 @@ namespace TaxWebAppCore8.Controllers
 
             try
             {
-                // همان شاخه‌ای که RimaCalculate استفاده می‌کند:
-                // خروجی آن در Header و Rows قرار می‌گیرد.
-                var source = BMain._Context.GetLastInvoiceForSend(
-                    (short)1,
-                    request,
-                    isForTis: 2);
+                // سرویس از Context دیتابیس و تنظیمات همین مشتری استفاده می‌کند.
+                var omidService = new OmidTaxService(
+                    BMain._Context,
+                    BMain.SrvInfo);
 
-                if (source?.Header == null)
-                {
-                    return BadRequest(new
-                    {
-                        success = false,
-                        message =
-                            "سربرگ فاکتور از دیتابیس برنگشت. " +
-                            "InvoiceID، StoreID و BookerWorkstationID را بررسی کنید."
-                    });
-                }
+                // خود سرویس MEMORY_ID را به‌عنوان FiscalId می‌خواند.
+                var payload = omidService.BuildRequest(request);
 
-                if (source.Rows == null || source.Rows.Count == 0)
-                {
-                    return BadRequest(new
-                    {
-                        success = false,
-                        message = "ردیف‌های فاکتور از دیتابیس برنگشت."
-                    });
-                }
-
-                // تبدیل Header و Rows دیتابیس به مدل درخواست امید.
-                string fiscalIdForPreview =
-                    string.IsNullOrWhiteSpace(_config.FiscalId)
-                        ? "__FISCAL_ID_PREVIEW_ONLY__"
-                        : _config.FiscalId;
-
-                var payload = OmidInvoiceMapper.Map(
-                    source,
-                    fiscalIdForPreview,
-                    BMain.SrvInfo.TINS);
-
-                // نمایش JSON ساخته‌شده؛ هیچ ارسالی انجام نمی‌شود.
+                // فقط JSON ساخته‌شده را نمایش می‌دهیم؛ ارسال HTTP نداریم.
                 string json = JsonConvert.SerializeObject(
                     payload,
                     Formatting.Indented);
@@ -177,6 +157,7 @@ namespace TaxWebAppCore8.Controllers
             }
             catch (InvalidOperationException ex)
             {
+                // خطاهای قابل‌انتظار، مثل پیدا نشدن فاکتور.
                 return BadRequest(new
                 {
                     success = false,
@@ -185,6 +166,7 @@ namespace TaxWebAppCore8.Controllers
             }
             catch (Exception)
             {
+                // جزئیات خطاهای غیرمنتظره در پاسخ عمومی نمایش داده نمی‌شوند.
                 return StatusCode(500, new
                 {
                     success = false,
