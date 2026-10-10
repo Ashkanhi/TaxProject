@@ -421,6 +421,16 @@
 
 @section js_UAGManagment {
     <script src="~/Content/MyJS/TaxOperationStatus.js" asp-append-version="true"></script>
-    <script src="~/Content/MyJS/SendInvoice.js" asp-append-version="true"></script>
 
+    @if (string.Equals(
+       TaxServiceAndApp.BI.BMain.SrvInfo?.ServiceType?.Trim(),
+       "Omid",
+       System.StringComparison.OrdinalIgnoreCase))
+    {
+        <script src="~/Content/MyJS/OmidSendInvoice.js" asp-append-version="true"></script>
+    }
+    else
+    {
+        <script src="~/Content/MyJS/SendInvoice.js" asp-append-version="true"></script>
+    }
 }

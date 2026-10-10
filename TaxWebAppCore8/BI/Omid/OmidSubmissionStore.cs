@@ -11,8 +11,69 @@ namespace TaxWebAppCore8.BI.Omid
     {
         private readonly string _connectionString;
 
+
+        public sealed class OmidSubmissionStatus
+        {
+            public Guid InvoiceId { get; set; }
+            public string State { get; set; } = string.Empty;
+            public string? TrackingId { get; set; }
+            public string? InvoiceNumber { get; set; }
+            public string? Fingerprint { get; set; }
+            public string? LastError { get; set; }
+            public DateTime CreatedUtc { get; set; }
+            public DateTime UpdatedUtc { get; set; }
+        }
+
+        /// <summary>
+        /// وضعیت محلی فاکتور را می‌خواند؛ هیچ درخواست HTTP و هیچ تغییری
+        /// در دیتابیس انجام نمی‌دهد. اگر رکوردی نباشد، null برمی‌گرداند.
+        /// </summary>
+        public async Task<OmidSubmissionStatus?> GetAsync(
+            Guid invoiceId,
+            CancellationToken cancellationToken = default)
+        {
+            if (invoiceId == Guid.Empty)
+                throw new ArgumentException(
+                    "شناسهٔ فاکتور معتبر نیست.",
+                    nameof(invoiceId));
+
+            const string sql = @"
+SELECT InvoiceId, State, TrackingId, InvoiceNumber,
+       Fingerprint, LastError, CreatedUtc, UpdatedUtc
+FROM dbo.OmidInvoiceSubmission
+WHERE InvoiceId = @InvoiceId;";
+
+            using var connection = new SqlConnection(_connectionString);
+            using var command = new SqlCommand(sql, connection);
+
+            command.Parameters.Add("@InvoiceId", SqlDbType.UniqueIdentifier)
+                .Value = invoiceId;
+
+            await connection.OpenAsync(cancellationToken);
+            using var reader = await command.ExecuteReaderAsync(cancellationToken);
+
+            if (!await reader.ReadAsync(cancellationToken))
+                return null;
+
+            return new OmidSubmissionStatus
+            {
+                InvoiceId = reader.GetGuid(0),
+                State = reader.GetString(1),
+                TrackingId = reader.IsDBNull(2) ? null : reader.GetString(2),
+                InvoiceNumber = reader.IsDBNull(3) ? null : reader.GetString(3),
+                Fingerprint = reader.IsDBNull(4) ? null : reader.GetString(4),
+                LastError = reader.IsDBNull(5) ? null : reader.GetString(5),
+                CreatedUtc = reader.GetDateTime(6),
+                UpdatedUtc = reader.GetDateTime(7)
+            };
+        }
+        // وضعیت ثبت‌شدهٔ یک فاکتور در دیتابیس محلی.
+
         public OmidSubmissionStore(DTOServerInfo serverInfo)
         {
+
+
+
             if (serverInfo == null)
                 throw new ArgumentNullException(nameof(serverInfo));
 

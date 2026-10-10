@@ -23,7 +23,7 @@
     <link rel="stylesheet" href="~/css/select2.min.css">
 
     <link rel="stylesheet" href="~/Content/dist/css/skins/_all-skins.min.css">
-@* 
+    @*
     <link href="~/Content/PersianDateTimePicker/persian-datepicker.min.css" rel="stylesheet" />
     <link href="~/Content/PersianDateTimePicker/theme/persian-datepicker-blue.min.css" rel="stylesheet" /> *@
     <link href="~/Content/MdBootstrapPersianDateTimePicker/jquery.Bootstrap-PersianDateTimePicker.css" rel="stylesheet" />
@@ -36,17 +36,17 @@
 
     <style type="text/css">
         /*.item {
-                    margin: 0;
-                }
-                .no-gap {
-                    margin: 0;
-                }*/
+                            margin: 0;
+                        }
+                        .no-gap {
+                            margin: 0;
+                        }*/
         body {
             font-size: 16px; /* Default font size */
             background-color: darkgrey; /* پنل کمی روشن‌تر از قبل */
         }
 
-       .content-wrapper {
+        .content-wrapper {
             font-size: 16px; /* Default font size */
             background-color: lightgray; /* پنل کمی روشن‌تر از قبل */
         }
@@ -59,6 +59,7 @@
             padding: 20px;
             margin-bottom: 24px;
         }
+
         button {
             font-size: 16px;
             font-weight: bold;
@@ -182,7 +183,6 @@
             table-layout: auto; /* Adjust table layout */
         }
 
-
         .mt {
             margin-top: 20px;
         }
@@ -294,6 +294,17 @@ background-color:orange;border-color:orange;font-weight:bold;color:#FFF">ارت�
                         </ul>
                     </li>
 
+                    @* لاگ‌ها ممکن است اطلاعات داخلی داشته باشند؛ لینک فقط در دسترسی محلی نمایش داده می‌شود. *@
+                    @if (Context.Connection.RemoteIpAddress is { } remoteIp &&
+                    System.Net.IPAddress.IsLoopback(remoteIp))
+                    {
+                        <li id="menu-system-logs">
+                            <a asp-controller="SystemLogs" asp-action="Index">
+                                <i class="fa fa-file-text-o"></i>
+                                <span>لاگ‌های سیستم</span>
+                            </a>
+                        </li>
+                    }
                 </ul>
             </section>
         </aside>
@@ -310,8 +321,6 @@ background-color:orange;border-color:orange;font-weight:bold;color:#FFF">ارت�
                 <li><a href="#control-sidebar-home-tab" data-toggle="tab"><i class="fa fa-home"></i></a></li>
                 <li><a href="#control-sidebar-settings-tab" data-toggle="tab"><i class="fa fa-gears"></i></a></li>
             </ul>
-
-
         </aside>
 
         <div class="control-sidebar-bg"></div>

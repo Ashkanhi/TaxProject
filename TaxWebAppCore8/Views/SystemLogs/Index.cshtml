@@ -1,0 +1,68 @@
+﻿@model TaxWebAppCore8.Models.SystemLogsPageModel
+
+@{
+    ViewData["Title"] = "لاگ‌های سیستم";
+}
+
+<section class="content-header">
+    <h1>لاگ‌های سیستم</h1>
+</section>
+
+<section class="content">
+    <div class="box box-primary">
+        <div class="box-body">
+            <form asp-controller="SystemLogs" asp-action="Index" method="get">
+                <label for="fileName">فایل لاگ</label>
+
+                <select id="fileName" name="fileName" class="form-control">
+                    <option value=""
+                            selected="@(string.IsNullOrEmpty(Model.SelectedFileName))">
+                        همهٔ فایل‌ها
+                    </option>
+
+                    @foreach (var file in Model.Files)
+                    {
+                        <option value="@file.FileName"
+                                selected="@(Model.SelectedFileName == file.FileName)">
+                            @file.FileName —
+                            @file.LastWriteTime.ToString("yyyy/MM/dd HH:mm:ss")
+                        </option>
+                    }
+                </select>
+
+                <button type="submit" class="btn btn-primary"
+                        style="margin-top:10px">
+                    نمایش / بازخوانی
+                </button>
+            </form>
+
+            <p style="margin-top:15px">
+                آخرین @Model.Entries.Count رخداد، از جدید به قدیم
+            </p>
+        </div>
+    </div>
+
+    @if (Model.Entries.Count == 0)
+    {
+        <div class="alert alert-info">
+            لاگی برای نمایش پیدا نشد.
+        </div>
+    }
+    else
+    {
+        @foreach (var entry in Model.Entries)
+        {
+            <div class="box box-default">
+                <div class="box-header">
+                    <strong>
+                        @entry.Timestamp.ToString("yyyy/MM/dd HH:mm:ss.fff")
+                    </strong>
+                    — @entry.FileName
+                </div>
+                <div class="box-body">
+                    <pre style="white-space:pre-wrap; direction:ltr; text-align:left;">@entry.Text</pre>
+                </div>
+            </div>
+        }
+    }
+    }

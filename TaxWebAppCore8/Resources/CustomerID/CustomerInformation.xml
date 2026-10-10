@@ -81,7 +81,7 @@
 	<ConnectionTimeOut>120</ConnectionTimeOut>
 	<!--Based On Second-->
 
-	<ServiceType>Tax</ServiceType>
+	<ServiceType>Omid</ServiceType>
 	<!--Tis OR Tax Or Rima Or RimaCalculate Or Omid-->
 
 	<DataBaseType>Baran</DataBaseType>
