@@ -46,10 +46,14 @@ builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.Configure<OmidConfig>(
     builder.Configuration.GetSection(OmidConfig.SectionName));
 
-// ثبت کلاینت ارتباط با امید.
-// HttpClientFactory منابع ارتباطی این کلاینت را مدیریت می‌کند.
-// این ثبت به‌تنهایی هیچ درخواستی به امید ارسال نمی‌کند.
-builder.Services.AddHttpClient<OmidApiClient>();
+// درخواست‌های امید را بدون پروکسیِ سیستم ارسال می‌کنیم.
+// این تنظیم فقط روی OmidApiClient اثر دارد.
+builder.Services
+    .AddHttpClient<OmidApiClient>()
+    .ConfigurePrimaryHttpMessageHandler(() => new System.Net.Http.HttpClientHandler
+    {
+        UseProxy = false
+    });
 
 // ثبت کارهای زمان‌بندی‌شده برنامه.
 builder.Services.AddQuartz(q =>

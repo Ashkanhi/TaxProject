@@ -171,52 +171,49 @@ namespace TaxWebAppCore8.BI.Omid
                     new AuthenticationHeaderValue("Bearer", token);
             }
 
-#if DEBUG
-            // خواندن بدنه از خود درخواست برای ثبت دقیق محتوای ارسالی.
-            string sentBody = await request.Content.ReadAsStringAsync(
-                cancellationToken);
+            string? responseText = null;
+            int? httpStatusCode = null;
+            Exception? callError = null;
 
-            System.Diagnostics.Debug.WriteLine("===== OMID REQUEST =====");
-            System.Diagnostics.Debug.WriteLine(
-                $"URL: {new Uri(_httpClient.BaseAddress!, path)}");
-            System.Diagnostics.Debug.WriteLine("METHOD: POST");
-            System.Diagnostics.Debug.WriteLine("BODY:");
-            System.Diagnostics.Debug.WriteLine(sentBody);
-#endif
-
-            // ارسال درخواست به امید.
-            // در صورت خطای شبکه، پاسخ HTTP نداریم؛ خطا به فراخواننده منتقل می‌شود.
-            using HttpResponseMessage response = await _httpClient.SendAsync(
-                request,
-                cancellationToken);
-
-            // دریافت متن اصلی پاسخ بدون تغییر.
-            string responseText = await response.Content.ReadAsStringAsync(
-                cancellationToken);
-
-#if DEBUG
-            // ثبت پاسخ قبل از بررسی موفقیت، تا پاسخ خطا هم نمایش داده شود.
-            System.Diagnostics.Debug.WriteLine("===== OMID RESPONSE =====");
-            System.Diagnostics.Debug.WriteLine(
-                $"HTTP: {(int)response.StatusCode}");
-            System.Diagnostics.Debug.WriteLine("BODY:");
-            System.Diagnostics.Debug.WriteLine(responseText);
-            System.Diagnostics.Debug.WriteLine("=========================");
-#endif
-
-            // اگر HTTP ناموفق باشد، کد وضعیت و متن اصلی پاسخ
-            // در قالب خطا به لایه فراخواننده منتقل می‌شود.
-            if (!response.IsSuccessStatusCode)
+            try
             {
-                throw new HttpRequestException(
-                    $"خطای ارتباط با امید؛ HTTP {(int)response.StatusCode}. " +
-                    $"پاسخ سرور: {responseText}",
-                    inner: null,
-                    statusCode: response.StatusCode);
-            }
+                // هر دو سرویس login و SendInvoice از همین مسیر عبور می‌کنند.
+                using HttpResponseMessage response = await _httpClient.SendAsync(
+                    request,
+                    cancellationToken);
 
-            // برگرداندن پاسخ برای پردازش توسط فراخواننده.
-            return responseText;
+                httpStatusCode = (int)response.StatusCode;
+                responseText = await response.Content.ReadAsStringAsync(
+                    cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new HttpRequestException(
+                        $"خطای ارتباط با امید؛ HTTP {httpStatusCode}. " +
+                        $"پاسخ سرور: {responseText}",
+                        inner: null,
+                        statusCode: response.StatusCode);
+                }
+
+                return responseText;
+            }
+            catch (Exception ex)
+            {
+                callError = ex;
+                throw;
+            }
+            finally
+            {
+                // درخواست خوانا، بدنهٔ رمزنگاری‌شده و پاسخ همان فراخوانی
+                // در یک رخداد لاگ ثبت می‌شوند؛ اطلاعات محرمانه پوشانده می‌شوند.
+                OmidApiTraceLogger.TryWrite(
+                    path,
+                    plainJson,
+                    bodyJson,
+                    httpStatusCode,
+                    responseText,
+                    callError);
+            }
         }
 
         /// <summary>

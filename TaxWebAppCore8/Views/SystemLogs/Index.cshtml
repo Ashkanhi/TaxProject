@@ -30,7 +30,8 @@
                     }
                 </select>
 
-                <button type="submit" class="btn btn-primary"
+                <button type="submit"
+                        class="btn btn-primary"
                         style="margin-top:10px">
                     نمایش / بازخوانی
                 </button>
@@ -54,15 +55,78 @@
         {
             <div class="box box-default">
                 <div class="box-header">
-                    <strong>
+                    <strong class="js-log-time">
                         @entry.Timestamp.ToString("yyyy/MM/dd HH:mm:ss.fff")
                     </strong>
-                    — @entry.FileName
+                    —
+                    <span class="js-log-file">@entry.FileName</span>
+
+                    <button type="button"
+                            class="btn btn-default btn-sm"
+                            style="float:left"
+                            title="کپی کل این رخداد"
+                            aria-label="کپی کل این رخداد"
+                            onclick="copySystemLog(this)">
+                        <i class="fa fa-copy"></i>
+                    </button>
                 </div>
+
                 <div class="box-body">
-                    <pre style="white-space:pre-wrap; direction:ltr; text-align:left;">@entry.Text</pre>
+                    <pre class="js-log-text"
+                         style="white-space:pre-wrap; direction:ltr; text-align:left;">@entry.Text</pre>
                 </div>
             </div>
         }
     }
-    }
+</section>
+
+@section js_UAGManagment {
+    <script>
+        async function copySystemLog(button) {
+            // کادر مربوط به همان دکمه‌ای را پیدا می‌کنیم که کاربر کلیک کرده است.
+            const box = button.closest(".box");
+
+            const time = box.querySelector(".js-log-time").textContent.trim();
+            const fileName = box.querySelector(".js-log-file").textContent.trim();
+            const logText = box.querySelector(".js-log-text").textContent;
+
+            // تمام اطلاعات قابل‌مشاهدهٔ رخداد را برای کپی آماده می‌کنیم.
+            const textToCopy = time + " — " + fileName + "\n" + logText;
+
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    // روش اصلی در localhost و مرورگرهای جدید.
+                    await navigator.clipboard.writeText(textToCopy);
+                } else {
+                    // روش جایگزین برای مرورگرهایی که Clipboard API ندارند.
+                    const temporaryInput = document.createElement("textarea");
+                    temporaryInput.value = textToCopy;
+                    temporaryInput.style.position = "fixed";
+                    temporaryInput.style.opacity = "0";
+
+                    document.body.appendChild(temporaryInput);
+                    temporaryInput.select();
+
+                    const copied = document.execCommand("copy");
+                    temporaryInput.remove();
+
+                    if (!copied) {
+                        throw new Error("کپی انجام نشد.");
+                    }
+                }
+
+                // علامت تیک، موفقیت کپی را برای دو ثانیه نشان می‌دهد.
+                const icon = button.querySelector("i");
+                icon.className = "fa fa-check";
+                button.title = "کپی شد";
+
+                setTimeout(function () {
+                    icon.className = "fa fa-copy";
+                    button.title = "کپی کل این رخداد";
+                }, 2000);
+            } catch (error) {
+                alert("کپی لاگ انجام نشد. دسترسی کلیپ‌بورد مرورگر را بررسی کنید.");
+            }
+        }
+    </script>
+}

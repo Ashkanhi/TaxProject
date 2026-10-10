@@ -65,7 +65,7 @@ namespace TaxWebAppCore8.BI.Omid
                     Tdis = sourceHeader.Tdis,
                     Tadis = sourceHeader.Tadis,
                     Tvam = sourceHeader.Tvam,
-                    Todam = sourceHeader.Todam,
+                    Todam = sourceHeader.Todam ?? 0m,
                     Tbill = sourceHeader.Tbill,
                     Tvop = sourceHeader.Tvop,
                     Cap = sourceHeader.Cap,

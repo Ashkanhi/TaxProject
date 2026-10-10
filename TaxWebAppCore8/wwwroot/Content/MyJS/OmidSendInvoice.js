@@ -769,52 +769,46 @@ function InitialInqTables() {
 }
 function InitialTabels() {
     tblDoNotSend = $("#tblDoNotSend").DataTable({
-        'paging': true,
-        'lengthChange': true,
-        "language": tablePersianPacketlang,
-        'searching': true,
-        'ordering': false,
+        paging: true,
+        lengthChange: true,
+        language: tablePersianPacketlang,
+        searching: true,
+        ordering: false,
         lengthMenu: [
             [10, 25, 50, 100, 500, 1000, 2000, 5000],
             ['10 ', '25 ', '50 ', '100', '500', '1000', '2000', '5000']
-            /* ['10 ردیف', '25 ردیف', '50 ردیف', '100 ردیف', '500 ردیف']*/
         ],
-        'info': true,
-        'autoWidth': false,
-        "order": [],
+        info: true,
+        autoWidth: false,
+        order: [],
         select: {
             style: 'multi',
             selector: 'tr'
         },
-        createdRow: function (row, data, dataIndex) {
-            // رنگ قرمز برای خطا
-            if (data["fSendState"] === '3' || data["fSendState"] === 3) {
+
+        createdRow: function (row, data) {
+            if (data.fSendState === '3' || data.fSendState === 3) {
                 $(row).addClass("row-error");
-            }
-            // رنگ سبز برای ارسال موفق
-            else if (data["fSendState"] === '4' || data["fSendState"] === 4) {
+            } else if (data.fSendState === '4' || data.fSendState === 4) {
                 $(row).addClass("row-success");
-            }
-            // رنگ زرد برای ارسال با وضعیت نامشخص
-            else if (data["fSendState"] === '2' || data["fSendState"] === 2) {
+            } else if (data.fSendState === '2' || data.fSendState === 2) {
                 $(row).addClass("row-warning");
             }
 
-            // قابلیت باز و بسته شدن جزئیات
+            // باز و بسته کردن ردیف‌های اقلام فاکتور
             $(row).find('td.details-control').on('click', function () {
                 var tr = $(this).closest('tr');
-                var row = tblDoNotSend.row(tr);
+                var invoiceRow = tblDoNotSend.row(tr);
 
-                if (row.child.isShown()) {
-                    row.child.hide();
+                if (invoiceRow.child.isShown()) {
+                    invoiceRow.child.hide();
                     tr.removeClass('shown');
                 } else {
-                    row.child(format(row.data())).show();
+                    invoiceRow.child(format(invoiceRow.data())).show();
                     tr.addClass('shown');
                 }
             });
         },
-
 
         columns: [
             {
@@ -822,20 +816,45 @@ function InitialTabels() {
                 orderable: false,
                 data: null,
                 defaultContent: '<i class="fa fa-plus"></i>',
-                title: 'اقلام' // No title needed for the expand button
+                title: 'اقلام'
             },
-            { data: "fSendState", name: "fSendState", title: "fSendState", visible: false, searchable: false },
+            {
+                data: "fSendState",
+                name: "fSendState",
+                title: "fSendState",
+                visible: false,
+                searchable: false
+            },
             {
                 title: "ردیف",
-                "data": "Index",
-                name: "Index", sortable: false,
+                data: "Index",
+                name: "Index",
+                sortable: false,
                 render: function (data, type, row, meta) {
                     return meta.row + meta.settings._iDisplayStart + 1;
                 }
             },
-            { data: "InvoiceId", name: "InvoiceId", title: "InvoiceId", visible: false, searchable: false },
-            { data: "StoreID", name: "StoreID", title: "StoreID", visible: false, searchable: false },
-            { data: "BookerWorkstationID", name: "BookerWorkstationID", title: "BookerWorkstationID", visible: false, searchable: false },
+            {
+                data: "InvoiceId",
+                name: "InvoiceId",
+                title: "InvoiceId",
+                visible: false,
+                searchable: false
+            },
+            {
+                data: "StoreID",
+                name: "StoreID",
+                title: "StoreID",
+                visible: false,
+                searchable: false
+            },
+            {
+                data: "BookerWorkstationID",
+                name: "BookerWorkstationID",
+                title: "BookerWorkstationID",
+                visible: false,
+                searchable: false
+            },
 
             { data: "StoreName", name: "StoreName", title: "شعبه" },
             { data: "RealInvoiceNumber", name: "RealInvoiceNumber", title: "شماره فاکتور" },
@@ -852,87 +871,118 @@ function InitialTabels() {
             {
                 title: "عملیات",
                 name: "Operations",
-                searchable: false
-                , sortable: false,
+                data: null,
+                searchable: false,
+                orderable: false,
+                render: function (data, type, row) {
+                    if (type !== "display") {
+                        return "";
+                    }
 
-                defaultContent: ""
-                //  "<td class=\"nowrap\"><a href=\"#\" class=\"btn btn-info btn-xs send\"><i class=\"fa fa-paper-plane\"></i> ارسال </a></td>"
+                    // فقط فاکتورهای ارسال‌نشده یا برگشت‌خورده
+                    // دکمهٔ ارسال تکی خواهند داشت.
+                    var state = String(row.fSendState);
 
-                //  "<td class=\"nowrap\"><a href=\"#\" class=\"btn btn-info btn-xs send\"><i class=\"fa fa-paper-plane\"></i> ارسال </a><a href=\"#\" class=\"btn btn-primary btn-xs showG\"><i class=\"fa fa-eye\"></i> نمایش</a></td>"
+                    if (state === "1" || state === "3") {
+                        return '<button type="button" class="btn btn-info btn-xs send">' +
+                            '<i class="fa fa-paper-plane"></i> ارسال تکی به امید' +
+                            '</button>';
+                    }
+
+                    return "";
+                }
             }
-
         ],
-        responsive: true,
-
+        responsive: true
     });
+
+    // انتخاب ردیف برای کارهای دیگر جدول
     $('#tblDoNotSend tbody').on('click', 'tr', function () {
-
         $(this).toggleClass('row_selected');
-
-        //if (data.Add)
-        //    row.addClass('row_selected');
-        //else
-        //    row.removeClass('row_selected');
-
         updateButtonStates();
     });
-    $("#tblDoNotSend").on("click", ".send", function () {
 
-        var current_row = $(this).parents('tr');
-        if (current_row.hasClass('child')) {
-            current_row = current_row.prev();
-        }
-        var data = tblDoNotSend.row(current_row).data();
-        var dataID = data["InvoiceId"];
-        var sendStat = data["fSendState"];
-        if (sendStat == 1 || sendStat == "1" || sendStat == 3 || sendStat == "3") {
-            SendFactorForTax(data);
-        }
-        else if (sendStat == 2 || sendStat == "2") {
-            SendFactorForCheckTax(dataID);
+    // کلیک روی دکمهٔ داخل همان ردیف، فقط همان فاکتور را ارسال می‌کند.
+    $("#tblDoNotSend").on("click", ".send", async function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        var button = $(this);
+
+        // جلوی دوبار کلیک‌کردن روی دکمه هنگام ارسال را می‌گیریم.
+        if (button.prop("disabled")) {
+            return;
         }
 
+        var currentRow = button.closest('tr');
 
+        if (currentRow.hasClass('child')) {
+            currentRow = currentRow.prev();
+        }
 
+        var invoiceData = tblDoNotSend.row(currentRow).data();
+
+        if (!invoiceData) {
+            alert('اطلاعات این فاکتور از جدول خوانده نشد.');
+            return;
+        }
+
+        var state = String(invoiceData.fSendState);
+
+        if (state !== "1" && state !== "3") {
+            alert('این فاکتور در وضعیت قابل ارسال نیست.');
+            return;
+        }
+
+        button.prop("disabled", true);
+
+        try {
+            // این تابع وضعیت قبلی را بررسی می‌کند و سپس ارسال تکی را انجام می‌دهد.
+            await SendFactorForTax(invoiceData);
+        } finally {
+            button.prop("disabled", false);
+        }
     });
 
     tblFactorItems = $("#tblFactorItems").DataTable({
-        'paging': true,
-        'lengthChange': true,
-        "language": tablePersianPacketlang,
-        'searching': false,
-        'ordering': false,
-
-        'info': true,
-        'autoWidth': false,
-        "order": [],
-
+        paging: true,
+        lengthChange: true,
+        language: tablePersianPacketlang,
+        searching: false,
+        ordering: false,
+        info: true,
+        autoWidth: false,
+        order: [],
         columns: [
-
-            { data: "ItemID", name: "ItemID", title: "ItemID", visible: false, searchable: false },
+            {
+                data: "ItemID",
+                name: "ItemID",
+                title: "ItemID",
+                visible: false,
+                searchable: false
+            },
             {
                 title: "ردیف",
-                "data": "Index",
-                name: "Index", sortable: false,
+                data: "Index",
+                name: "Index",
+                sortable: false,
                 render: function (data, type, row, meta) {
                     return meta.row + meta.settings._iDisplayStart + 1;
                 }
             },
-            { data: "InvoiceID", name: "InvoiceID", title: "InvoiceID", visible: false, searchable: false },
-
+            {
+                data: "InvoiceID",
+                name: "InvoiceID",
+                title: "InvoiceID",
+                visible: false,
+                searchable: false
+            },
             { data: "ItemName", name: "ItemName", title: "نام کالا" },
-            { data: "fee", name: "fee", title: "قیمت(ریال)" },
-
-
-
-
+            { data: "fee", name: "fee", title: "قیمت(ریال)" }
         ],
-        responsive: true,
-
+        responsive: true
     });
 }
-
-
 
 function OnchangeStat() {
     try {
