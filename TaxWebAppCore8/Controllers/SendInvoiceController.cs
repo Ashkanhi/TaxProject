@@ -22,6 +22,7 @@ using OfficeOpenXml;
 using Microsoft.AspNetCore.Hosting;
 using TaxWebAppCore8.Models.SharedDTO;
 using Microsoft.AspNetCore.SignalR;
+using TaxWebAppCore8.BI.Omid;
 
 namespace TaxWebAppCore8.Controllers
 {
@@ -440,7 +441,17 @@ namespace TaxWebAppCore8.Controllers
 
                 var list = await BMain.GetAllInvoiceAsync(searchFilter);
 
-                var SendSuccess = list.Where(a => a.fSendState == 4).ToList();
+                // فقط در صفحهٔ ارسال امید، فاکتورهای ثبت‌شدهٔ امید را پنهان می‌کنیم.
+                // فهرست پایه دست‌نخورده می‌ماند تا صفحهٔ استعلام بتواند آن‌ها را پیدا کند.
+                if (string.Equals(BMain.SrvInfo?.ServiceType?.Trim(),
+                    "Omid", StringComparison.OrdinalIgnoreCase))
+                {
+                    var submittedIds = await new OmidSubmissionStore(BMain.SrvInfo)
+                        .GetSubmittedInvoiceIdsAsync(HttpContext.RequestAborted);
+                    list = list.Where(invoice =>
+                        Guid.TryParse(invoice.InvoiceId, out var invoiceId) &&
+                        !submittedIds.Contains(invoiceId)).ToList();
+                }
 
                 var result = Json(new
                 {

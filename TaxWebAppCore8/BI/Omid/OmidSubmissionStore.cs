@@ -4,6 +4,8 @@ using System.Data.SqlClient;
 using System.Threading;
 using System.Threading.Tasks;
 using TaxServiceAndApp.Models.SharedDTO;
+using System.Collections.Generic;
+
 
 namespace TaxWebAppCore8.BI.Omid
 {
@@ -67,7 +69,73 @@ WHERE InvoiceId = @InvoiceId;";
                 UpdatedUtc = reader.GetDateTime(7)
             };
         }
+
+        /// <summary>
+        /// شناسهٔ تمام فاکتورهایی را که برای امید ثبت شده‌اند می‌خواند.
+        /// حتی رکوردهای در حال ارسال یا با نتیجهٔ نامشخص هم نباید دوباره در فهرست ارسال بیایند.
+        /// </summary>
+        public async Task<HashSet<Guid>> GetSubmittedInvoiceIdsAsync(
+            CancellationToken cancellationToken = default)
+        {
+            const string sql = "SELECT InvoiceId FROM dbo.OmidInvoiceSubmission;";
+            var invoiceIds = new HashSet<Guid>();
+
+            using var connection = new SqlConnection(_connectionString);
+            using var command = new SqlCommand(sql, connection);
+
+            await connection.OpenAsync(cancellationToken);
+            using var reader = await command.ExecuteReaderAsync(cancellationToken);
+
+            while (await reader.ReadAsync(cancellationToken))
+                invoiceIds.Add(reader.GetGuid(0));
+
+            return invoiceIds;
+        }
         // وضعیت ثبت‌شدهٔ یک فاکتور در دیتابیس محلی.
+
+
+        /// <summary>
+        /// فاکتورهایی را برمی‌گرداند که از امید شناسهٔ پیگیری گرفته‌اند
+        /// و می‌توان آن‌ها را در صفحهٔ استعلام امید نمایش داد.
+        /// این متد فقط دیتابیس محلی را می‌خواند و به سرویس امید درخواست نمی‌فرستد.
+        /// </summary>
+        public async Task<List<OmidSubmissionStatus>> GetTrackableAsync(
+            CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+SELECT InvoiceId, State, TrackingId, InvoiceNumber,
+       Fingerprint, LastError, CreatedUtc, UpdatedUtc
+FROM dbo.OmidInvoiceSubmission
+WHERE TrackingId IS NOT NULL
+  AND LTRIM(RTRIM(TrackingId)) <> N''
+  AND State NOT IN (N'Prepared', N'Sending')
+ORDER BY UpdatedUtc DESC;";
+
+            var result = new List<OmidSubmissionStatus>();
+
+            using var connection = new SqlConnection(_connectionString);
+            using var command = new SqlCommand(sql, connection);
+
+            await connection.OpenAsync(cancellationToken);
+            using var reader = await command.ExecuteReaderAsync(cancellationToken);
+
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                result.Add(new OmidSubmissionStatus
+                {
+                    InvoiceId = reader.GetGuid(0),
+                    State = reader.GetString(1),
+                    TrackingId = reader.IsDBNull(2) ? null : reader.GetString(2),
+                    InvoiceNumber = reader.IsDBNull(3) ? null : reader.GetString(3),
+                    Fingerprint = reader.IsDBNull(4) ? null : reader.GetString(4),
+                    LastError = reader.IsDBNull(5) ? null : reader.GetString(5),
+                    CreatedUtc = reader.GetDateTime(6),
+                    UpdatedUtc = reader.GetDateTime(7)
+                });
+            }
+
+            return result;
+        }
 
         public OmidSubmissionStore(DTOServerInfo serverInfo)
         {
@@ -86,7 +154,7 @@ WHERE InvoiceId = @InvoiceId;";
         /// true یعنی این فاکتور برای اولین بار رزرو شد.
         /// false یعنی قبلاً رکوردی برای آن وجود داشته و نباید دوباره ارسال شود.
         /// </summary>
-        public async Task<bool> TryReserveAsync(
+        public async Task<bool> TrySaveOmidInvoiceSubmissionAsync(
             Guid invoiceId,
             CancellationToken cancellationToken = default)
         {
@@ -123,6 +191,79 @@ VALUES (@InvoiceId, N'Prepared');";
 
 
         /// <summary>
+        /// شناسهٔ همهٔ فاکتورهای دسته را در جدول OmidInvoiceSubmission ذخیره می‌کند.
+        /// اگر یکی از شناسه‌ها قبلاً ثبت شده باشد، ذخیرهٔ کل دسته لغو می‌شود.
+        /// این متد هیچ درخواستی به سرویس امید نمی‌فرستد.
+        /// </summary>
+        public async Task<bool> TrySaveOmidInvoiceSubmissionBatchAsync(
+            IReadOnlyCollection<Guid> invoiceIds,
+            CancellationToken cancellationToken = default)
+        {
+            if (invoiceIds == null || invoiceIds.Count == 0)
+                throw new ArgumentException(
+                    "فهرست فاکتورها خالی است.",
+                    nameof(invoiceIds));
+
+            var uniqueIds = new HashSet<Guid>();
+
+            foreach (Guid invoiceId in invoiceIds)
+            {
+                if (invoiceId == Guid.Empty || !uniqueIds.Add(invoiceId))
+                    throw new ArgumentException(
+                        "شناسهٔ خالی یا تکراری در فهرست فاکتورها وجود دارد.",
+                        nameof(invoiceIds));
+            }
+
+            var orderedIds = new List<Guid>(uniqueIds);
+            orderedIds.Sort();
+
+            const string sql = @"
+INSERT INTO dbo.OmidInvoiceSubmission (InvoiceId, State)
+VALUES (@InvoiceId, N'Prepared');";
+
+            using var connection = new SqlConnection(_connectionString);
+            await connection.OpenAsync(cancellationToken);
+
+            // یا همهٔ رکوردها ذخیره می‌شوند، یا هیچ‌کدام.
+            using var transaction = connection.BeginTransaction();
+
+            try
+            {
+                using var command = new SqlCommand(sql, connection, transaction);
+
+                var idParameter = command.Parameters.Add(
+                    "@InvoiceId",
+                    SqlDbType.UniqueIdentifier);
+
+                foreach (Guid invoiceId in orderedIds)
+                {
+                    idParameter.Value = invoiceId;
+
+                    int inserted = await command.ExecuteNonQueryAsync(
+                        cancellationToken);
+
+                    if (inserted != 1)
+                        throw new InvalidOperationException(
+                            $"ذخیرهٔ فاکتور {invoiceId} انجام نشد.");
+                }
+
+                transaction.Commit();
+                return true;
+            }
+            catch (SqlException ex) when (ex.Number == 2627 || ex.Number == 2601)
+            {
+                // دست‌کم یک فاکتور از قبل در جدول وجود دارد.
+                transaction.Rollback();
+                return false;
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
+
+        /// <summary>
         /// درست پیش از درخواست HTTP، وضعیت فاکتور را Sending می‌کند.
         /// فقط فاکتوری که قبلاً Prepared شده باشد می‌تواند وارد این وضعیت شود.
         /// </summary>
@@ -149,6 +290,139 @@ WHERE InvoiceId = @InvoiceId AND State = N'Prepared';";
                     "فاکتور برای ارسال به امید در وضعیت Prepared پیدا نشد.");
         }
 
+
+        /// <summary>
+        /// وضعیت همهٔ فاکتورهای یک دسته را یکجا از Prepared به Sending تغییر می‌دهد.
+        /// اگر حتی یک فاکتور Prepared نباشد، تغییر وضعیت کل دسته لغو می‌شود.
+        /// این متد هنوز هیچ درخواستی به امید نمی‌فرستد.
+        /// </summary>
+        public async Task MarkBatchSendingAsync(
+            IReadOnlyCollection<Guid> invoiceIds,
+            CancellationToken cancellationToken = default)
+        {
+            if (invoiceIds == null || invoiceIds.Count == 0)
+                throw new ArgumentException(
+                    "فهرست فاکتورها خالی است.",
+                    nameof(invoiceIds));
+
+            var uniqueIds = new HashSet<Guid>();
+
+            foreach (Guid invoiceId in invoiceIds)
+            {
+                if (invoiceId == Guid.Empty || !uniqueIds.Add(invoiceId))
+                    throw new ArgumentException(
+                        "شناسهٔ خالی یا تکراری در فهرست فاکتورها وجود دارد.",
+                        nameof(invoiceIds));
+            }
+
+            var orderedIds = new List<Guid>(uniqueIds);
+            orderedIds.Sort();
+
+            const string sql = @"
+UPDATE dbo.OmidInvoiceSubmission
+SET State = N'Sending',
+    UpdatedUtc = SYSUTCDATETIME()
+WHERE InvoiceId = @InvoiceId
+  AND State = N'Prepared';";
+
+            using var connection = new SqlConnection(_connectionString);
+            await connection.OpenAsync(cancellationToken);
+
+            using var transaction = connection.BeginTransaction();
+
+            try
+            {
+                using var command = new SqlCommand(sql, connection, transaction);
+
+                var idParameter = command.Parameters.Add(
+                    "@InvoiceId",
+                    SqlDbType.UniqueIdentifier);
+
+                foreach (Guid invoiceId in orderedIds)
+                {
+                    idParameter.Value = invoiceId;
+
+                    int changed = await command.ExecuteNonQueryAsync(
+                        cancellationToken);
+
+                    if (changed != 1)
+                        throw new InvalidOperationException(
+                            $"فاکتور {invoiceId} در وضعیت Prepared پیدا نشد.");
+                }
+
+                transaction.Commit();
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
+
+
+
+        /// <summary>
+        /// فقط رکوردهای Prepared همین دسته را حذف می‌کند.
+        /// Sending، Pending و Unknown هرگز حذف نمی‌شوند.
+        /// </summary>
+        public async Task<int> DeletePreparedOmidInvoiceSubmissionBatchAsync(
+            IReadOnlyCollection<Guid> invoiceIds,
+            CancellationToken cancellationToken = default)
+        {
+            if (invoiceIds == null || invoiceIds.Count == 0)
+                throw new ArgumentException(
+                    "فهرست فاکتورها خالی است.",
+                    nameof(invoiceIds));
+
+            var uniqueIds = new HashSet<Guid>();
+
+            foreach (Guid invoiceId in invoiceIds)
+            {
+                if (invoiceId == Guid.Empty || !uniqueIds.Add(invoiceId))
+                    throw new ArgumentException(
+                        "شناسهٔ خالی یا تکراری در فهرست فاکتورها وجود دارد.",
+                        nameof(invoiceIds));
+            }
+
+            var orderedIds = new List<Guid>(uniqueIds);
+            orderedIds.Sort();
+
+            const string sql = @"
+DELETE FROM dbo.OmidInvoiceSubmission
+WHERE InvoiceId = @InvoiceId
+  AND State = N'Prepared';";
+
+            using var connection = new SqlConnection(_connectionString);
+            await connection.OpenAsync(cancellationToken);
+
+            using var transaction = connection.BeginTransaction();
+
+            try
+            {
+                using var command = new SqlCommand(sql, connection, transaction);
+
+                var idParameter = command.Parameters.Add(
+                    "@InvoiceId",
+                    SqlDbType.UniqueIdentifier);
+
+                int deletedCount = 0;
+
+                foreach (Guid invoiceId in orderedIds)
+                {
+                    idParameter.Value = invoiceId;
+                    deletedCount += await command.ExecuteNonQueryAsync(
+                        cancellationToken);
+                }
+
+                transaction.Commit();
+                return deletedCount;
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
         /// <summary>
         /// پس از دریافت رسید معتبر امید، trackingId و وضعیت Pending را ثبت می‌کند.
         /// Pending یعنی امید درخواست را برای پردازش پذیرفته؛ نتیجهٔ نهایی هنوز معلوم نیست.

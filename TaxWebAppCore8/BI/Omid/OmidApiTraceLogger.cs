@@ -52,8 +52,13 @@ namespace TaxWebAppCore8.BI.Omid
                 string functionName = servicePath switch
                 {
                     "/api/Auth/login" => nameof(OmidApiClient.LoginAsync),
+
                     "/api/Invoice/SendInvoice" =>
                         nameof(OmidApiClient.SendInvoiceAsync),
+
+                    "/api/Invoice/Invoiceinquiry" =>
+                        nameof(OmidApiClient.InquiryAsync),
+
                     _ => servicePath
                 };
 

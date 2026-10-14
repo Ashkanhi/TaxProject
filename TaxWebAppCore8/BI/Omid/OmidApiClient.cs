@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -103,7 +103,67 @@ namespace TaxWebAppCore8.BI.Omid
             return OmidSendResponseParser.Parse(responseJson);
         }
 
+        /// <summary>
+        /// سازگاری با فراخوانی تکی فعلی؛ همان مسیر مشترک استعلام را اجرا می‌کند.
+        /// </summary>
+        public Task<string> InquiryAsync(
+            string trackingId,
+            CancellationToken cancellationToken = default)
+        {
+            return InquiryAsync(
+                new[] { trackingId },
+                cancellationToken);
+        }
 
+        /// <summary>
+        /// یک یا چند شناسهٔ پیگیری را در یک درخواست به امید استعلام می‌زند.
+        /// پاسخ فعلاً خام برمی‌گردد تا ساختار واقعی آن را بررسی کنیم.
+        /// </summary>
+        public async Task<string> InquiryAsync(
+            IReadOnlyCollection<string> trackingIds,
+            CancellationToken cancellationToken = default)
+        {
+            // عدد ۱۰۰ محدودیت داخلی برنامهٔ ما برای اندازهٔ هر دسته است؛
+            // در مستند، سقف رسمی تعداد requestIds مشخص نشده است.
+            if (trackingIds == null ||
+                trackingIds.Count == 0 ||
+                trackingIds.Count > 100)
+            {
+                throw new InvalidOperationException(
+                    "در هر درخواست استعلام، بین ۱ تا ۱۰۰ شناسهٔ پیگیری لازم است.");
+            }
+
+            var ids = new List<string>();
+            var uniqueIds = new HashSet<string>(
+                StringComparer.OrdinalIgnoreCase);
+
+            foreach (string trackingId in trackingIds)
+            {
+                if (string.IsNullOrWhiteSpace(trackingId))
+                    throw new InvalidOperationException(
+                        "یکی از شناسه‌های پیگیری استعلام خالی است.");
+
+                string id = trackingId.Trim();
+
+                if (!uniqueIds.Add(id))
+                    throw new InvalidOperationException(
+                        $"شناسهٔ پیگیری {id} در انتخاب‌ها تکراری است.");
+
+                ids.Add(id);
+            }
+
+            // برای کل دسته یک‌بار وارد امید می‌شویم.
+            string token = await LoginAsync(cancellationToken);
+
+            // برای یک فاکتور نیز requestIds آرایه‌ای با یک عضو خواهد بود.
+            var payload = new { requestIds = ids };
+
+            return await PostEncryptedAsync(
+                "/api/Invoice/Invoiceinquiry",
+                payload,
+                token,
+                cancellationToken);
+        }
         /// <summary>
         /// داده را رمزنگاری و امضا می‌کند و با POST به امید می‌فرستد.
         /// خروجی، متن پاسخ سرور است.

@@ -352,9 +352,22 @@
                         <i class="fa fa-check-square-o"></i> انتخاب همه
                     </button>
 
-                    <button type="button" id="btnSendGroupForTax" class="btn custom-send-group">
-                        <i class="fa fa-paper-plane"></i> ارسال گروهی
-                    </button>
+                    @if (string.Equals(
+                    TaxServiceAndApp.BI.BMain.SrvInfo?.ServiceType?.Trim(),
+                    "Omid",
+                    System.StringComparison.OrdinalIgnoreCase))
+                    {
+                        <button type="button" id="btnSendOmidInvoices" class="btn custom-send-group">
+                            <i class="fa fa-paper-plane"></i> ارسال صورتحساب
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="button" id="btnSendGroupForTax" class="btn custom-send-group">
+                            <i class="fa fa-paper-plane"></i> ارسال گروهی
+                        </button>
+                    }
+
 
                     <button type="button" id="btnExportExcel" class="btn custom-excel">
                         <i class="fa fa-file-excel-o"></i> خروجی اکسل
@@ -405,7 +418,13 @@
                                         <th>totalDiscount</th>
                                         <th>netPrice</th>
                                         <th>totalTax</th>
-                                        <th>Operations</th>
+                                        @if (!string.Equals(
+                                            TaxServiceAndApp.BI.BMain.SrvInfo?.ServiceType?.Trim(),
+                                            "Omid",
+                                            System.StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            <th>Operations</th>
+                                        }
                                     </tr>
                                 </thead>
                             </table>

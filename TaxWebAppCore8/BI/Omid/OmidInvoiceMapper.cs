@@ -44,8 +44,7 @@ namespace TaxWebAppCore8.BI.Omid
                 Header = new OmidInvoiceHeader
                 {
                     TaxId = string.Empty,
-                    Indatim = sourceHeader.Indatim?.ToString(
-                        CultureInfo.InvariantCulture),
+                    Indatim = FormatOmidIndatim(sourceHeader.Indatim),
                     Inty = sourceHeader.Inty,
                     Inno = inno,
                     Inp = sourceHeader.Inp,
@@ -120,6 +119,35 @@ namespace TaxWebAppCore8.BI.Omid
 
             request.Invoices.Add(invoice);
             return request;
+        }
+
+
+        /// <summary>
+        /// زمان صدور ذخیره‌شده در دیتابیس را از Unix milliseconds
+        /// به تاریخ شمسی مورد انتظار نمونهٔ امید تبدیل می‌کند.
+        /// </summary>
+        private static string FormatOmidIndatim(long? unixMilliseconds)
+        {
+            if (!unixMilliseconds.HasValue)
+                throw new InvalidOperationException(
+                    "تاریخ صدور فاکتور (indatim) در دیتابیس خالی است.");
+
+            // مقدار دیتابیس، زمان Unix برحسب میلی‌ثانیه است.
+            DateTimeOffset utcTime =
+                DateTimeOffset.FromUnixTimeMilliseconds(unixMilliseconds.Value);
+
+            // تاریخ را بر اساس ساعت ایران محاسبه می‌کنیم.
+            DateTimeOffset iranTime =
+                utcTime.ToOffset(TimeSpan.FromMinutes(210));
+
+            var persianCalendar = new PersianCalendar();
+
+            return string.Format(
+                CultureInfo.InvariantCulture,
+                "{0:0000}/{1:00}/{2:00}",
+                persianCalendar.GetYear(iranTime.DateTime),
+                persianCalendar.GetMonth(iranTime.DateTime),
+                persianCalendar.GetDayOfMonth(iranTime.DateTime));
         }
     }
 }

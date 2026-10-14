@@ -290,7 +290,17 @@ background-color:orange;border-color:orange;font-weight:bold;color:#FFF">ارت�
                             </span>
                         </a>
                         <ul class="treeview-menu">
-                            <li class="active"><a href="~/General/InquryIndex"><i class="fa fa-circle-o"></i>استعلام</a></li>
+                            @if (string.Equals(
+                                TaxServiceAndApp.BI.BMain.SrvInfo?.ServiceType?.Trim(),
+                                "Omid",
+                                System.StringComparison.OrdinalIgnoreCase))
+                            {
+                                <li class="active"><a asp-controller="OmidInquiry" asp-action="Index"><i class="fa fa-circle-o"></i>استعلام</a></li>
+                            }
+                            else
+                            {
+                                <li class="active"><a href="~/General/InquryIndex"><i class="fa fa-circle-o"></i>استعلام</a></li>
+                            }
                         </ul>
                     </li>
                     @* لاگ‌ها فقط هنگام دسترسی از خودِ سرور در منو دیده شوند. *@

@@ -23,6 +23,7 @@ var ListSelectSendReturnedStatus = [];
 var ListOffAllInvoice = [];
 var FactorID;
 var connection1;
+var omidSendInProgress = false;
 
 function showLiveStatus(title, text) {
     TaxOperationStatus.update(title, text);
@@ -167,9 +168,8 @@ function InitElemans() {
         $("#btnSelectAll").on('click', function () {
             SelectAndUnSelectAll("forSend");
         });
-        $("#btnSendGroupForTax").on('click', function () {
-            groupingSendForTaxWithParameter();
-        });
+        // تنها مسیر ارسال در پنل امید؛ یک یا چند فاکتور انتخاب‌شده را می‌فرستد.
+        $("#btnSendOmidInvoices").on('click', sendSelectedInvoicesToOmid);
         //$("#btnSendGroupForCheck").on('click', function () {
         //    groupingSendForCheck();
         //});
@@ -745,27 +745,6 @@ function InitialInqTables() {
 
         updateButtonStates();
     });
-    $("#tblInquiry").on("click", ".send", function () {
-
-        var current_row = $(this).parents('tr');
-        if (current_row.hasClass('child')) {
-            current_row = current_row.prev();
-        }
-        var data = tblInquiry.row(current_row).data();
-        var dataID = data["InvoiceId"];
-        var sendStat = data["fSendState"];
-        if (sendStat == 1 || sendStat == "1" || sendStat == 3 || sendStat == "3") {
-            SendFactorForTax(data);
-        }
-        else if (sendStat == 2 || sendStat == "2") {
-            SendFactorForCheckTax(dataID);
-        }
-
-
-
-    });
-
-
 }
 function InitialTabels() {
     tblDoNotSend = $("#tblDoNotSend").DataTable({
@@ -866,32 +845,7 @@ function InitialTabels() {
             { data: "TotalPriceWithSeperator", name: "TotalPriceWithSeperator", title: "مبلغ فاکتور(ریال)", sortable: false },
             { data: "TotalDiscount", name: "TotalDiscount", title: "مبلغ تخفیف", sortable: false },
             { data: "NetPriceWithSeperator", name: "NetPriceWithSeperator", title: "مبلغ خالص(ریال)", sortable: false },
-            { data: "TotalTax", name: "TotalTax", title: "مالیات", sortable: false },
-
-            {
-                title: "عملیات",
-                name: "Operations",
-                data: null,
-                searchable: false,
-                orderable: false,
-                render: function (data, type, row) {
-                    if (type !== "display") {
-                        return "";
-                    }
-
-                    // فقط فاکتورهای ارسال‌نشده یا برگشت‌خورده
-                    // دکمهٔ ارسال تکی خواهند داشت.
-                    var state = String(row.fSendState);
-
-                    if (state === "1" || state === "3") {
-                        return '<button type="button" class="btn btn-info btn-xs send">' +
-                            '<i class="fa fa-paper-plane"></i> ارسال تکی به امید' +
-                            '</button>';
-                    }
-
-                    return "";
-                }
-            }
+            { data: "TotalTax", name: "TotalTax", title: "مالیات", sortable: false }
         ],
         responsive: true
     });
@@ -900,48 +854,6 @@ function InitialTabels() {
     $('#tblDoNotSend tbody').on('click', 'tr', function () {
         $(this).toggleClass('row_selected');
         updateButtonStates();
-    });
-
-    // کلیک روی دکمهٔ داخل همان ردیف، فقط همان فاکتور را ارسال می‌کند.
-    $("#tblDoNotSend").on("click", ".send", async function (event) {
-        event.preventDefault();
-        event.stopPropagation();
-
-        var button = $(this);
-
-        // جلوی دوبار کلیک‌کردن روی دکمه هنگام ارسال را می‌گیریم.
-        if (button.prop("disabled")) {
-            return;
-        }
-
-        var currentRow = button.closest('tr');
-
-        if (currentRow.hasClass('child')) {
-            currentRow = currentRow.prev();
-        }
-
-        var invoiceData = tblDoNotSend.row(currentRow).data();
-
-        if (!invoiceData) {
-            alert('اطلاعات این فاکتور از جدول خوانده نشد.');
-            return;
-        }
-
-        var state = String(invoiceData.fSendState);
-
-        if (state !== "1" && state !== "3") {
-            alert('این فاکتور در وضعیت قابل ارسال نیست.');
-            return;
-        }
-
-        button.prop("disabled", true);
-
-        try {
-            // این تابع وضعیت قبلی را بررسی می‌کند و سپس ارسال تکی را انجام می‌دهد.
-            await SendFactorForTax(invoiceData);
-        } finally {
-            button.prop("disabled", false);
-        }
     });
 
     tblFactorItems = $("#tblFactorItems").DataTable({
@@ -1450,10 +1362,100 @@ function SendFactorForCheckTax(dataID) {
 function setButtonsDesible(value) {
     $('#btnSearch').prop('disabled', value);
     $('#btnSelectAll').prop('disabled', value);
+    $('#btnSendOmidInvoices').prop('disabled', value);
     $('#btnSendGroupForTax').prop('disabled', value);
     //$('#btnSendGroupForCheck').prop('disabled', value);
     $('#btnSearchInq').prop('disabled', value);
     $('#btnExportExcel').prop('disabled', value);
     $('#btnExportExcelSummary').prop('disabled', value);
     $('#btnExportExcelInq').prop('disabled', value);
+}
+
+// تمام فاکتورهای انتخاب‌شده را از مسیر مستقل امید ارسال می‌کند.
+// هر درخواست حداکثر ۱۰۰ فاکتور دارد و درخواست‌ها پشت سر هم اجرا می‌شوند.
+async function sendSelectedInvoicesToOmid() {
+    if (omidSendInProgress) return;
+
+    var selectedRows = tblDoNotSend.rows('.row_selected').data().toArray();
+
+    if (selectedRows.length === 0) {
+        alert('ابتدا حداقل یک فاکتور انتخاب کنید.');
+        return;
+    }
+
+    // فاکتورهای نامعتبر را بی‌صدا از انتخاب کاربر حذف نمی‌کنیم.
+    var invalidRow = selectedRows.find(function (row) {
+        var state = String(row.fSendState);
+        return (state !== '1' && state !== '3') ||
+            !row.InvoiceId || row.StoreID == null;
+    });
+
+    if (invalidRow) {
+        alert('یکی از فاکتورهای انتخاب‌شده اطلاعات یا وضعیت قابل ارسال ندارد.');
+        return;
+    }
+
+    var requests = selectedRows.map(function (row) {
+        return {
+            InvoiceID: row.InvoiceId,
+            StoreID: row.StoreID,
+            BookerWorkstationID: row.BookerWorkstationID,
+            Status: row.fSendState
+        };
+    });
+
+    omidSendInProgress = true;
+    $('#btnSendOmidInvoices').prop('disabled', true);
+    $('#waiting').show();
+    setButtonsDesible(true);
+
+    var pendingTotal = 0;
+    var requestStarted = false;
+
+    try {
+        for (var offset = 0; offset < requests.length; offset += 100) {
+            var batch = requests.slice(offset, offset + 100);
+            requestStarted = true;
+
+            var response = await $.ajax({
+                url: '/OmidSendInvoice/SendSelectedInvoices',
+                type: 'POST',
+                contentType: 'application/json; charset=utf-8',
+                data: JSON.stringify(batch)
+            });
+
+            pendingTotal += Number(response && response.pendingCount || 0);
+
+            // اگر نتیجهٔ یک دسته نامشخص شد، دستهٔ بعدی را نمی‌فرستیم.
+            if (!response || response.success !== true) {
+                alert(
+                    'ارسال در دستهٔ شروع‌شونده از فاکتور ' + (offset + 1) +
+                    ' متوقف شد.\n' +
+                    (response && response.message ? response.message : 'نتیجه مشخص نیست.') +
+                    '\nتعداد Pending تا این لحظه: ' + pendingTotal +
+                    '\nبدون بررسی وضعیت، دوباره ارسال نکنید.'
+                );
+                return;
+            }
+        }
+
+        alert('درخواست ارسال ' + pendingTotal +
+            ' فاکتور پذیرفته شد.\nنتیجهٔ نهایی را بعداً استعلام کنید.');
+    } catch (error) {
+        var message = error.responseJSON && error.responseJSON.message
+            ? error.responseJSON.message
+            : 'ارتباط قطع شد یا پاسخ دریافت نشد.';
+
+        alert(message +
+            '\nتعداد Pending ثبت‌شده تا این لحظه: ' + pendingTotal +
+            '\nقبل از تلاش دوباره وضعیت فاکتورها را بررسی کنید.');
+    } finally {
+        if (requestStarted) getAllInvoiceList(false);
+
+        $('#waiting').hide();
+        setButtonsDesible(false);
+        OnchangeStat();
+        $('#btnSendOmidInvoices').prop('disabled', false);
+        omidSendInProgress = false;
+    }
 }

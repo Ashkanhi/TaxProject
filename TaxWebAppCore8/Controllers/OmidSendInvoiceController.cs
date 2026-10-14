@@ -8,6 +8,9 @@ using TaxServiceAndApp.BI;
 using TaxServiceAndApp.Models.SharedDTO;
 using TaxWebAppCore8.BI.Omid;
 using TaxWebAppCore8.Models.SharedDTO;
+using System.Collections.Generic;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
 
 namespace TaxWebAppCore8.Controllers
 {
@@ -20,6 +23,189 @@ namespace TaxWebAppCore8.Controllers
         {
             _logger = logger;
         }
+        /// <summary>
+        /// فقط برای تست در محیط Development.
+        /// درخواست چندفاکتوری را می‌سازد و خلاصه‌اش را نشان می‌دهد؛
+        /// هیچ فاکتوری ذخیره یا به امید ارسال نمی‌شود.
+        /// </summary>
+        [HttpPost]
+        public IActionResult PreviewSelectedInvoices(
+            [FromBody] List<DTOInvoiceLimitParameter> invoices,
+            [FromServices] IWebHostEnvironment environment)
+        {
+            if (!environment.IsDevelopment())
+                return NotFound();
+
+            if (!string.Equals(
+                BMain.SrvInfo?.ServiceType?.Trim(),
+                "Omid",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                return NotFound();
+            }
+
+            if (invoices == null || invoices.Count < 2 || invoices.Count > 100)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "برای تست، بین ۲ تا ۱۰۰ فاکتور لازم است."
+                });
+            }
+
+            try
+            {
+                var service = BMain._omidService
+                    ?? throw new InvalidOperationException(
+                        "سرویس امید آماده نشده است.");
+
+                // این متد فقط از دیتابیس می‌خواند و درخواست را در حافظه می‌سازد.
+                OmidSendInvoiceRequest request =
+                    service.BuildBatchRequest(invoices);
+
+                var summary = new List<object>();
+
+                foreach (var item in request.Invoices)
+                {
+                    summary.Add(new
+                    {
+                        inno = item.Header.Inno,
+                        indatim = item.Header.Indatim,
+                        rowCount = item.Body.Count
+                    });
+                }
+
+                return Json(new
+                {
+                    success = true,
+                    fiscalId = request.FiscalId,
+                    count = request.Invoices.Count,
+                    invoices = summary
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "خطا در پیش‌نمایش چند فاکتور امید");
+
+                return BadRequest(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// یک تا صد فاکتور انتخاب‌شده را به امید ارسال می‌کند.
+        /// نتیجهٔ Pending به معنی پذیرش درخواست است، نه تأیید نهایی فاکتور.
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> SendSelectedInvoices(
+            [FromBody] List<DTOInvoiceLimitParameter> invoices,
+            CancellationToken cancellationToken)
+        {
+            if (!string.Equals(
+                BMain.SrvInfo?.ServiceType?.Trim(),
+                "Omid",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                return NotFound();
+            }
+
+            if (invoices == null || invoices.Count < 1 || invoices.Count > 100)
+            {
+                return Json(new
+                {
+                    success = false,
+                    pendingCount = 0,
+                    message = "در هر درخواست باید بین ۱ تا ۱۰۰ فاکتور باشد."
+                });
+            }
+
+            try
+            {
+                var client = HttpContext.RequestServices
+                    .GetRequiredService<OmidApiClient>();
+
+                var service = BMain._omidService
+                    ?? throw new InvalidOperationException("سرویس امید آماده نشده است.");
+
+                // یک فاکتور از همان مسیر تکیِ موجود ارسال می‌شود.
+                if (invoices.Count == 1)
+                {
+                    var sent = await service.SubmitSingleInvoiceAsync(
+                        invoices[0], client, cancellationToken);
+
+                    return Json(new
+                    {
+                        success = true,
+                        pendingCount = 1,
+                        message = "درخواست یک فاکتور پذیرفته شد؛ نتیجهٔ نهایی باید استعلام شود.",
+                        items = new[]
+                        {
+                    new
+                    {
+                        invoiceId = sent.LocalInvoiceId,
+                        state = "Pending",
+                        trackingId = sent.Receipt.TrackingId
+                    }
+                }
+                    });
+                }
+
+                // چند فاکتور در یک درخواست به امید ارسال می‌شوند.
+                var result = await service.SubmitBatchInvoicesAsync(
+                    invoices, client, cancellationToken);
+
+                int pendingCount = 0;
+                int unknownCount = 0;
+                var items = new List<object>();
+
+                foreach (var item in result.Items)
+                {
+                    if (item.State == "Pending")
+                        pendingCount++;
+                    else
+                        unknownCount++;
+
+                    items.Add(new
+                    {
+                        invoiceId = item.InvoiceId,
+                        inno = item.Inno,
+                        state = item.State,
+                        trackingId = item.TrackingId,
+                        message = item.Message
+                    });
+                }
+
+                return Json(new
+                {
+                    success = unknownCount == 0,
+                    pendingCount,
+                    unknownCount,
+                    message = unknownCount == 0
+                        ? $"درخواست {pendingCount} فاکتور پذیرفته شد؛ نتیجهٔ نهایی باید استعلام شود."
+                        : $"{pendingCount} فاکتور Pending و {unknownCount} فاکتور Unknown است. فاکتور Unknown را دوباره ارسال نکنید.",
+                    items
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "خطا در ارسال فاکتورهای انتخاب‌شده به امید");
+
+                return Json(new
+                {
+                    success = false,
+                    pendingCount = 0,
+                    message = ex is InvalidOperationException || ex is AggregateException
+                        ? ex.Message
+                        : "نتیجهٔ ارسال مشخص نیست. پیش از تلاش دوباره، وضعیت فاکتورها را بررسی کنید."
+                });
+            }
+        }
+
 
         [HttpPost]
         public async Task<IActionResult> SendInvoice(
@@ -169,6 +355,66 @@ namespace TaxWebAppCore8.Controllers
                     success = false,
                     message = "خواندن وضعیت محلی فاکتور ناموفق بود."
                 });
+            }
+        }
+
+
+        /// <summary>
+        /// نتیجهٔ فاکتور را از امید می‌پرسد؛ فاکتور جدیدی ارسال نمی‌کند.
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> Inquiry(
+            string invoiceId,
+            CancellationToken cancellationToken)
+        {
+            if (!string.Equals(
+                BMain.SrvInfo?.ServiceType?.Trim(),
+                "Omid",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                return NotFound();
+            }
+
+            if (!Guid.TryParse(invoiceId, out Guid id) || id == Guid.Empty)
+                return BadRequest("InvoiceId معتبر نیست.");
+
+            try
+            {
+                // رکورد ارسال همین فاکتور را از دیتابیس محلی می‌خوانیم.
+                var store = new OmidSubmissionStore(BMain.SrvInfo);
+                var submission = await store.GetAsync(id, cancellationToken);
+
+                if (submission == null)
+                    return NotFound("رکورد ارسال امید برای این فاکتور پیدا نشد.");
+
+                if (submission.State != "Pending" ||
+                    string.IsNullOrWhiteSpace(submission.TrackingId))
+                {
+                    return BadRequest(
+                        "این فاکتور در وضعیت Pending با شناسهٔ پیگیری معتبر نیست.");
+                }
+
+                // با trackingId ذخیره‌شده، نتیجه را از امید می‌گیریم.
+                var client = HttpContext.RequestServices
+                    .GetRequiredService<OmidApiClient>();
+
+                string responseJson = await client.InquiryAsync(
+                    submission.TrackingId,
+                    cancellationToken);
+
+                // فعلاً پاسخ واقعی امید را بدون تغییر نمایش می‌دهیم.
+                return Content(responseJson, "application/json; charset=utf-8");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "خطا در استعلام فاکتور {InvoiceId} از امید",
+                    invoiceId);
+
+                return StatusCode(
+                    502,
+                    "استعلام ناموفق بود؛ جزئیات را در لاگ امید بررسی کنید.");
             }
         }
     }

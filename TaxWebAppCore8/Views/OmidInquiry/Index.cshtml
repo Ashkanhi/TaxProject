@@ -1,0 +1,146 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "استعلام وضعیت امید";
+}
+
+<style>
+    #omidInquiryPage .myContainer { width: 100% !important; }
+    #omidInquiryPage .x_panel {
+        background-color: darkgrey; border: 1px solid #3e4f5c;
+        border-radius: 10px; box-shadow: 0 5px 15px #0004;
+        padding: 20px; margin-bottom: 24px;
+    }
+    #omidInquiryPage #butensDiv .btn {
+        border-radius: 8px; font-size: 14px; font-weight: bold;
+        padding: 8px 12px; margin: 4px;
+    }
+    #omidInquiryPage .custom-send-group { background: #27ae60; color: white; }
+    #omidInquiryPage .custom-check-connection { background: #e67e22; color: white; }
+    #omidInquiryPage #tblInquiry th,
+    #omidInquiryPage #tblInquiry td { text-align: center; vertical-align: middle; }
+    #omidInquiryPage #tblInquiry th { background: #dcdcdc; color: #1a1a1a; }
+    #omidInquiryPage #omidInquiryResults pre {
+        direction: ltr; text-align: left; white-space: pre-wrap;
+    }
+</style>
+
+<section class="content-header"><h1>استعلام وضعیت امید</h1><br /></section>
+<div id="omidInquiryPage" class="col-md-12 col-sm-12 col-xs-12"
+     style="direction:rtl"
+     data-list-url="@Url.Action("GetTrackable", "OmidInquiry")"
+     data-inquiry-url="@Url.Action("InquirySelected", "OmidInquiry")"
+     data-stores-url="@Url.Action("GetStores", "OmidInquiry")"
+     data-check-url="@Url.Action("CheckConnection", "OmidInquiry")">
+    <div class="container myContainer">
+        <div class="x_panel"><div class="card-body">
+            <form id="frmSearch" autocomplete="off">
+                <div class="row form-group" style="margin:0">
+                    <div class="col-md-3 col-sm-12 form-group">
+                        <label for="txtFromDate">از تاریخ</label>
+                        <div class="input-group">
+                            <div class="input-group-addon" data-mddatetimepicker="true"
+                                 data-trigger="click" data-targetselector="#txtFromDate"
+                                 data-groupid="omidInquiryDates" data-fromdate="true"
+                                 data-enabletimepicker="false" data-placement="left">
+                                <span class="glyphicon glyphicon-calendar"></span>
+                            </div>
+                            <input id="txtFromDate" type="text" class="form-control"
+                                   placeholder="از تاریخ ثبت فاکتور"
+                                   data-mddatetimepicker="true" data-trigger="click"
+                                   data-targetselector="#txtFromDate"
+                                   data-groupid="omidInquiryDates" data-fromdate="true"
+                                   data-enabletimepicker="false" data-placement="bottom" />
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-12 form-group">
+                        <label for="txtToDate">تا تاریخ</label>
+                        <div class="input-group">
+                            <div class="input-group-addon" data-mddatetimepicker="true"
+                                 data-trigger="click" data-targetselector="#txtToDate"
+                                 data-groupid="omidInquiryDates" data-todate="true"
+                                 data-enabletimepicker="false" data-placement="left">
+                                <span class="glyphicon glyphicon-calendar"></span>
+                            </div>
+                            <input id="txtToDate" type="text" class="form-control"
+                                   placeholder="تا تاریخ ثبت فاکتور"
+                                   data-mddatetimepicker="true" data-trigger="click"
+                                   data-targetselector="#txtToDate"
+                                   data-groupid="omidInquiryDates" data-todate="true"
+                                   data-enabletimepicker="false" data-placement="bottom" />
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-12 form-group">
+                        <label for="cmdStat">وضعیت</label>
+                        <select id="cmdStat" class="form-control">
+                            <option value="">همه</option>
+                            <option value="Pending">در انتظار تعیین وضعیت</option>
+                            <option value="Unknown">وضعیت نامشخص</option>
+                            <option value="Accepted">تأییدشده</option>
+                            <option value="Failed">ارسال‌شده با خطا</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 col-sm-12 form-group">
+                        <label for="cmbStores">فروشگاه</label>
+                        <select id="cmbStores" multiple class="form-control custom-select"
+                                aria-label="فروشگاه‌ها"></select>
+                    </div>
+                </div>
+                <div class="form-group" id="butensDiv" style="float:right">
+                    <button type="button" id="btnSearchInq" class="btn custom-send-group">
+                        <i class="fa fa-search" aria-hidden="true"></i> جستجو
+                    </button>
+                    <button type="button" id="omidInquirySubmit"
+                            class="btn btn-success" disabled>
+                        <i class="fa fa-bolt" aria-hidden="true"></i> استعلام صورتحساب
+                    </button>
+                    <button type="button" id="btnExportExcelInq"
+                            class="btn btn-primary" disabled>
+                        <i class="fa fa-file-excel-o" aria-hidden="true"></i> خروجی اکسل
+                    </button>
+                    <button type="button" id="btnCheckConnection1"
+                            class="btn custom-check-connection">
+                        <i class="fa fa-check-square" aria-hidden="true"></i> تست ارتباط
+                    </button>
+                </div>
+                <div style="clear:both"></div>
+                <div id="omidInquiryStatus" role="status" class="alert alert-info">
+                    بازهٔ تاریخ را انتخاب و جستجو کنید.
+                </div>
+            </form>
+        </div></div>
+
+        <div class="x_panel"><div class="panel-body"><div class="x_content">
+            <p style="text-align:center;color:red">لیست فاکتورهای ارسال‌شده به امید</p>
+            <div class="table-responsive">
+                <table id="tblInquiry"
+                       class="table table-striped table-bordered table-sm jambo_table dt-responsive"
+                       style="width:100%">
+                    <thead><tr>
+                        <th><input type="checkbox" id="omidInquirySelectAll"
+                                   title="انتخاب همه" /></th>
+                        <th>ردیف</th><th>شناسه فاکتور</th><th>شعبه</th>
+                        <th>شماره فاکتور</th><th>وضعیت</th>
+                        <th>توضیح وضعیت</th><th>تاریخ ثبت</th>
+                        <th>مشتری</th><th>منبع وضعیت</th>
+                        <th>شرح استعلام</th><th>مبلغ خالص</th>
+                        <th>مالیات</th><th>عملیات</th>
+                    </tr></thead>
+                    <tbody id="omidInquiryRows">
+                        <tr><td colspan="14">برای جستجو، بازهٔ تاریخ را وارد کنید.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div></div></div>
+
+        <div class="x_panel">
+            <strong>پاسخ استعلام امید</strong>
+            <div id="omidInquiryResults" style="margin-top:12px">
+                هنوز استعلامی انجام نشده است.
+            </div>
+        </div>
+    </div>
+</div>
+
+@section js_UAGManagment {
+    <script src="~/Content/MyJS/OmidInquiry.js" asp-append-version="true"></script>
+}
