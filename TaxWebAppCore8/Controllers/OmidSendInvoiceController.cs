@@ -9,6 +9,7 @@ using TaxServiceAndApp.Models.SharedDTO;
 using TaxWebAppCore8.BI.Omid;
 using TaxWebAppCore8.Models.SharedDTO;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 
@@ -112,6 +113,39 @@ namespace TaxWebAppCore8.Controllers
                 StringComparison.OrdinalIgnoreCase))
             {
                 return NotFound();
+            }
+
+            // خطای تبدیل JSON (مثلاً BookerWorkstationID خالی برای مدل عددی)
+            // نباید به‌اشتباه به کاربر به‌صورت خطای «تعداد فاکتورها» نمایش داده شود.
+            if (!ModelState.IsValid)
+            {
+                var modelErrors = ModelState
+                    .SelectMany(entry => entry.Value!.Errors.Select(error =>
+                        $"{entry.Key}: {error.ErrorMessage}"))
+                    .ToList();
+
+                string errorDetails = string.Join(" | ", modelErrors);
+                _logger.LogWarning(
+                    "ورودی ارسال امید به مدل تبدیل نشد: {ModelErrors}",
+                    errorDetails);
+
+                // این خطا قبل از تماس با API رخ می‌دهد؛ آن را در لاگ سیستم هم نگه می‌داریم.
+                ClsTools.Logger.NPSLogger
+                    .GetLogger(ClsTools.Logger.ModuleName.ArghamCompany_TaxGoverment)?
+                    .LogError("Omid SendSelectedInvoices ModelState: " + errorDetails);
+
+                bool missingWorkstation = modelErrors.Any(error =>
+                    error.Contains("BookerWorkstationID",
+                        StringComparison.OrdinalIgnoreCase));
+
+                return BadRequest(new
+                {
+                    success = false,
+                    pendingCount = 0,
+                    message = missingWorkstation
+                        ? "BookerWorkstationID یکی از فاکتورهای انتخاب‌شده خالی یا نامعتبر است؛ هیچ ارسالی انجام نشد."
+                        : "اطلاعات یکی از فاکتورهای انتخاب‌شده قابل خواندن نیست؛ هیچ ارسالی انجام نشد."
+                });
             }
 
             if (invoices == null || invoices.Count < 1 || invoices.Count > 100)

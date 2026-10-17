@@ -510,7 +510,7 @@ namespace TaxWebAppCore8.BI.Omid
                     throw new InvalidOperationException(
                         $"taxId فاکتور شمارهٔ {i + 1} باید رشتهٔ خالی باشد.");
 
-                if (!invoice.Header.Inno.HasValue)
+                if (!invoice.Header.Inno.HasValue || invoice.Header.Inno.Value <= 0)
                     throw new InvalidOperationException(
                         $"inno فاکتور شمارهٔ {i + 1} خالی یا نامعتبر است.");
 

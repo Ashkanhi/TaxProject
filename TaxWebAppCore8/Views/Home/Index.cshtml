@@ -1,6 +1,10 @@
 ﻿@{
     Layout = "~/Views/Shared/_Layout.cshtml";
     ViewData["Title"] = "ارسال فاکتور";
+    bool isOmidService = string.Equals(
+        TaxServiceAndApp.BI.BMain.SrvInfo?.ServiceType?.Trim(),
+        "Omid",
+        System.StringComparison.OrdinalIgnoreCase);
 }
 <style>
 
@@ -264,17 +268,33 @@
         font-weight: bold; /* پررنگ کردن متن انتخاب شده */
     }
 </style>
-<section class="content-header text-right">
-    <h1 class="page-title">
-        ارسال فاکتور
-        <br />
-    </h1>
-</section>
-<div class="col-md-12 col-sm-12 col-xs-12" style="direction:rtl;">
+@if (isOmidService)
+{
+    <link rel="stylesheet" href="~/Content/OmidTheme.css" asp-append-version="true" />
+}
+@if (!isOmidService)
+{
+    <section class="content-header text-right omid-page-heading">
+        <h1 class="page-title">
+            ارسال فاکتور
+            <br />
+        </h1>
+    </section>
+}
+<div id="omidSendPage" class="col-md-12 col-sm-12 col-xs-12" style="direction:rtl;">
 
 
     <div class="" style="direction:rtl;width:100% !important;">
         <div class="x_panel" style="width:100%">
+            @if (isOmidService)
+            {
+                <div class="omid-card-heading">
+                    <span class="omid-card-heading-icon" aria-hidden="true">
+                        <i class="fa fa-paper-plane-o"></i>
+                    </span>
+                    <h1>پنل ارسال صورتحساب</h1>
+                </div>
+            }
             <div class="card-body">
                 <form id="frmSearch">
                     <div class="row form-group" style="margin:0;">

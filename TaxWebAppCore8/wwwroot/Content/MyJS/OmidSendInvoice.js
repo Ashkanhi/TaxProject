@@ -378,28 +378,42 @@ async function ExportExcelSummary() {
     }
 }
 function CheckConnection() {
-    $.get("/SendInvoice/CheckConnection", function (data) {
-        if (data.Data === true) {
-            new PNotify({
-                title: 'ارتباط موفق',
-                text: 'ارتباط با سرور برقرار است!',
-                type: 'success',
-                styling: 'bootstrap3',
-                delay: 2000,
-                closer: true, // Ensure the close button is enabled
-                sticker: false // Disable the sticker if you want to ensure it does not
-            });
-        }
-        else {
-            new PNotify({
-                title: 'عملیات ناموفق',
-                text: 'قطع ارتباط',
-                delay: 2000,
-                styling: 'bootstrap3',
-                closer: true, // Ensure the close button is enabled
-                sticker: false // Disable the sticker if you want to ensure it does not
-            });
-        }
+    var $buttons = $("#btnCheckConnection, #btnCheckConnection1");
+    $buttons.prop("disabled", true);
+
+    // تست امید تا Login واقعی پیش می‌رود؛ این مسیر هیچ فاکتوری ارسال نمی‌کند.
+    $.ajax({
+        url: "/OmidInquiry/CheckConnection",
+        type: "GET",
+        dataType: "json"
+    }).done(function (data) {
+        var succeeded = data && data.success === true;
+        new PNotify({
+            title: succeeded ? "ارتباط و ورود موفق" : "تست ارتباط ناموفق",
+            text: data && data.message
+                ? data.message
+                : "پاسخ معتبر از تست ورود امید دریافت نشد.",
+            type: succeeded ? "success" : "error",
+            styling: "bootstrap3",
+            delay: 5000,
+            closer: true,
+            sticker: false
+        });
+    }).fail(function (xhr) {
+        var message = xhr.responseJSON && xhr.responseJSON.message
+            ? xhr.responseJSON.message
+            : "تست ورود به امید ناموفق بود؛ لاگ امید را بررسی کنید.";
+        new PNotify({
+            title: "تست ارتباط ناموفق",
+            text: message,
+            type: "error",
+            styling: "bootstrap3",
+            delay: 6000,
+            closer: true,
+            sticker: false
+        });
+    }).always(function () {
+        $buttons.prop("disabled", false);
     });
 }
 function InqSearch() {
@@ -1392,6 +1406,17 @@ async function sendSelectedInvoicesToOmid() {
 
     if (invalidRow) {
         alert('یکی از فاکتورهای انتخاب‌شده اطلاعات یا وضعیت قابل ارسال ندارد.');
+        return;
+    }
+
+    var missingWorkstationRow = selectedRows.find(function (row) {
+        return row.BookerWorkstationID == null || row.BookerWorkstationID === '';
+    });
+
+    if (missingWorkstationRow) {
+        alert('BookerWorkstationID فاکتور ' +
+            (missingWorkstationRow.RealInvoiceNumber || missingWorkstationRow.InvoiceId) +
+            ' در فهرست خالی است؛ ارسال انجام نشد.');
         return;
     }
 

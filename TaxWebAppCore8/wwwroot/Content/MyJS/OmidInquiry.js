@@ -74,7 +74,7 @@
         if (visibleInvoices.length === 0) {
             const tr = document.createElement("tr");
             const td = addTextCell(tr, "فاکتوری مطابق جستجو پیدا نشد.");
-            td.colSpan = 14;
+            td.colSpan = 13;
             rows.appendChild(tr);
             updateButtons();
             return;
@@ -111,17 +111,6 @@
             addTextCell(tr, money(invoice.NetPrice));
             addTextCell(tr, money(invoice.TotalTax));
 
-            const operationCell = document.createElement("td");
-            const singleButton = document.createElement("button");
-            singleButton.type = "button";
-            singleButton.className = "btn btn-primary btn-sm";
-            singleButton.textContent = "استعلام";
-            singleButton.disabled = busy;
-            singleButton.addEventListener("click", function () {
-                inquireSelected([invoice]);
-            });
-            operationCell.appendChild(singleButton);
-            tr.appendChild(operationCell);
             rows.appendChild(tr);
         });
 

@@ -18,7 +18,8 @@ namespace TaxWebAppCore8.Models.SharedDTO
                 else return default(Guid);
             }
         }
-        public string TaxGuid{ get; set; }
+        // در ارسال امید مقدار ندارد؛ نباید به‌صورت فیلد اجباری اعتبارسنجی شود.
+        public string? TaxGuid { get; set; }
         [DataMember]
         public int? StoreID { get; set; }
         [DataMember]

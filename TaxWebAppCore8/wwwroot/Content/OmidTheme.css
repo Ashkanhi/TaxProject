@@ -1,0 +1,310 @@
+/* ظاهر صفحات امید؛ همهٔ انتخابگرها به همین دو صفحه محدود شده‌اند. */
+.content-wrapper:has(#omidSendPage),
+.content-wrapper:has(#omidInquiryPage) {
+    background-color: #eef2f5;
+}
+
+.omid-page-heading {
+    margin-bottom: 16px;
+}
+
+.omid-page-heading h1 {
+    color: #183047;
+    font-size: 25px;
+    font-weight: 700;
+}
+
+#omidSendPage .omid-card-heading,
+#omidInquiryPage .omid-card-heading {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    margin: 0 0 16px;
+    padding: 0 0 13px;
+    border-bottom: 1px solid var(--omid-border, #dce5ed);
+    direction: rtl;
+}
+
+#omidSendPage .omid-card-heading-icon,
+#omidInquiryPage .omid-card-heading-icon {
+    display: inline-flex;
+    width: 36px;
+    height: 36px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: #e7f0f4;
+    color: #146f7b;
+    font-size: 16px;
+}
+
+#omidSendPage .omid-card-heading h1,
+#omidInquiryPage .omid-card-heading h1 {
+    margin: 0;
+    color: #183047;
+    font-size: 19px;
+    font-weight: 700;
+    line-height: 1.5;
+}
+
+#omidSendPage,
+#omidInquiryPage {
+    --omid-ink: #183047;
+    --omid-muted: #617488;
+    --omid-border: #dce5ed;
+    --omid-surface: #ffffff;
+    --omid-soft: #f4f8fb;
+    --omid-primary: #146f7b;
+    --omid-primary-hover: #0f5963;
+    color: var(--omid-ink);
+}
+
+#omidSendPage .x_panel,
+#omidInquiryPage .x_panel,
+#omidInquiryPage .myContainer {
+    background: var(--omid-surface);
+    border: 1px solid var(--omid-border);
+    border-radius: 14px;
+    box-shadow: 0 4px 18px rgba(24, 48, 71, .07);
+    padding: 22px;
+    margin-bottom: 20px;
+}
+
+#omidInquiryPage .myContainer {
+    max-width: none;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+    background: transparent;
+}
+
+/* لوگوی موجود در پروژه فقط در کارت جستجو و با شدت بسیار کم دیده می‌شود. */
+#omidSendPage > div > .x_panel:first-child,
+#omidInquiryPage .myContainer > .x_panel:first-child {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+}
+
+#omidSendPage > div > .x_panel:first-child::before,
+#omidInquiryPage .myContainer > .x_panel:first-child::before {
+    content: "";
+    position: absolute;
+    left: 18px;
+    bottom: 8px;
+    width: 145px;
+    height: 135px;
+    z-index: 0;
+    pointer-events: none;
+    background: url("dist/img/argham.png") center center / contain no-repeat;
+    opacity: .055;
+}
+
+#omidSendPage > div > .x_panel:first-child > *,
+#omidInquiryPage .myContainer > .x_panel:first-child > * {
+    position: relative;
+    z-index: 1;
+}
+
+#omidSendPage .form-control,
+#omidInquiryPage .form-control,
+#omidSendPage .input-group-addon,
+#omidInquiryPage .input-group-addon {
+    border-color: var(--omid-border);
+    border-radius: 8px;
+    background-color: #fff;
+    color: var(--omid-ink);
+    box-shadow: none;
+}
+
+#omidSendPage .form-control:focus,
+#omidInquiryPage .form-control:focus {
+    border-color: var(--omid-primary);
+    box-shadow: 0 0 0 3px rgba(20, 111, 123, .14);
+}
+
+#omidSendPage label,
+#omidInquiryPage label {
+    color: var(--omid-ink);
+    font-weight: 600;
+}
+
+#omidSendPage #butensDiv,
+#omidInquiryPage #butensDiv {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-top: 10px;
+}
+
+#omidSendPage #butensDiv .btn,
+#omidInquiryPage #butensDiv .btn {
+    margin: 0;
+    min-height: 38px;
+    padding: 8px 13px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    box-shadow: none;
+    font-size: 13px;
+    font-weight: 600;
+    transition: background-color .15s ease, border-color .15s ease;
+}
+
+#omidSendPage #butensDiv .btn:focus-visible,
+#omidInquiryPage #butensDiv .btn:focus-visible {
+    outline: 3px solid rgba(20, 111, 123, .28);
+    outline-offset: 2px;
+}
+
+#omidSendPage #butensDiv .btn:disabled,
+#omidInquiryPage #butensDiv .btn:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+}
+
+#omidSendPage #btnSearch,
+#omidInquiryPage #btnSearchInq {
+    background: #315b80;
+    color: #fff;
+}
+
+#omidSendPage #btnSearch:hover,
+#omidInquiryPage #btnSearchInq:hover {
+    background: #244865;
+}
+
+#omidSendPage #btnSendOmidInvoices,
+#omidInquiryPage #omidInquirySubmit {
+    background: var(--omid-primary);
+    color: #fff;
+}
+
+#omidSendPage #btnSendOmidInvoices:hover,
+#omidInquiryPage #omidInquirySubmit:hover {
+    background: var(--omid-primary-hover);
+}
+
+#omidSendPage #btnSelectAll,
+#omidSendPage #btnExportExcel,
+#omidSendPage #btnExportExcelSummary,
+#omidSendPage #btnExportExcelInq,
+#omidInquiryPage #btnExportExcelInq {
+    background: var(--omid-soft);
+    border-color: var(--omid-border);
+    color: var(--omid-ink);
+}
+
+#omidSendPage #btnSelectAll:hover,
+#omidSendPage #btnExportExcel:hover,
+#omidSendPage #btnExportExcelSummary:hover,
+#omidSendPage #btnExportExcelInq:hover,
+#omidInquiryPage #btnExportExcelInq:hover {
+    background: #e9f1f5;
+}
+
+#omidSendPage #btnCheckConnection,
+#omidInquiryPage #btnCheckConnection1 {
+    background: #fff5e8;
+    border-color: #f0d8b5;
+    color: #805019;
+}
+
+#omidSendPage #btnCheckConnection:hover,
+#omidInquiryPage #btnCheckConnection1:hover {
+    background: #ffedd5;
+}
+
+#omidSendPage #butensDiv .btn i,
+#omidInquiryPage #butensDiv .btn i {
+    color: inherit;
+}
+
+#omidSendPage #tblDoNotSend,
+#omidInquiryPage #tblInquiry {
+    background: var(--omid-surface);
+    border: 1px solid var(--omid-border);
+    font-size: 14px;
+}
+
+#omidSendPage #tblDoNotSend thead th,
+#omidInquiryPage #tblInquiry thead th {
+    background: #eaf2f6;
+    border-color: var(--omid-border);
+    color: var(--omid-ink);
+    font-size: 14px;
+    font-weight: 700;
+    padding: 11px 9px;
+    white-space: nowrap;
+}
+
+#omidSendPage #tblDoNotSend tbody td,
+#omidInquiryPage #tblInquiry tbody td {
+    border-color: #edf1f5;
+    color: var(--omid-ink);
+    padding: 10px 9px;
+    vertical-align: middle;
+}
+
+#omidSendPage #tblDoNotSend tbody tr:hover,
+#omidInquiryPage #tblInquiry tbody tr:hover {
+    background: #f1f8fa;
+}
+
+#omidSendPage #tblDoNotSend tbody tr.row_selected,
+#omidSendPage #tblDoNotSend tbody tr.selected,
+#omidInquiryPage #tblInquiry tbody tr.row_selected,
+#omidInquiryPage #tblInquiry tbody tr.selected {
+    background: #dceff1 !important;
+}
+
+#omidSendPage #tblDoNotSend tbody tr.row_selected td,
+#omidInquiryPage #tblInquiry tbody tr.row_selected td {
+    color: #104e58;
+}
+
+#omidSendPage #tblDoNotSend tbody tr.row-error {
+    background: #fff0ee !important;
+}
+
+#omidSendPage #tblDoNotSend tbody tr.row-success {
+    background: #eaf7ee !important;
+}
+
+#omidSendPage #tblDoNotSend tbody tr.row-warning {
+    background: #fff7e8 !important;
+}
+
+#omidSendPage #tblDoNotSend tbody tr.row-error td,
+#omidSendPage #tblDoNotSend tbody tr.row-success td,
+#omidSendPage #tblDoNotSend tbody tr.row-warning td {
+    color: var(--omid-ink) !important;
+}
+
+#omidInquiryPage #omidInquiryStatus {
+    background: #edf7f9;
+    border-color: #c8e5e9;
+    color: #195763;
+    border-radius: 8px;
+}
+
+#omidInquiryPage #omidInquiryResults pre {
+    background: var(--omid-soft);
+    border: 1px solid var(--omid-border);
+    border-radius: 8px;
+    padding: 14px;
+    color: var(--omid-ink);
+}
+
+@media (max-width: 767px) {
+    #omidSendPage .x_panel,
+    #omidInquiryPage .x_panel {
+        padding: 14px;
+    }
+
+    #omidSendPage #butensDiv .btn,
+    #omidInquiryPage #butensDiv .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}

@@ -23,8 +23,8 @@
         direction: ltr; text-align: left; white-space: pre-wrap;
     }
 </style>
+<link rel="stylesheet" href="~/Content/OmidTheme.css" asp-append-version="true" />
 
-<section class="content-header"><h1>استعلام وضعیت امید</h1><br /></section>
 <div id="omidInquiryPage" class="col-md-12 col-sm-12 col-xs-12"
      style="direction:rtl"
      data-list-url="@Url.Action("GetTrackable", "OmidInquiry")"
@@ -33,6 +33,12 @@
      data-check-url="@Url.Action("CheckConnection", "OmidInquiry")">
     <div class="container myContainer">
         <div class="x_panel"><div class="card-body">
+            <div class="omid-card-heading">
+                <span class="omid-card-heading-icon" aria-hidden="true">
+                    <i class="fa fa-download"></i>
+                </span>
+                <h1>پنل استعلام صورتحساب</h1>
+            </div>
             <form id="frmSearch" autocomplete="off">
                 <div class="row form-group" style="margin:0">
                     <div class="col-md-3 col-sm-12 form-group">
@@ -123,10 +129,10 @@
                         <th>توضیح وضعیت</th><th>تاریخ ثبت</th>
                         <th>مشتری</th><th>منبع وضعیت</th>
                         <th>شرح استعلام</th><th>مبلغ خالص</th>
-                        <th>مالیات</th><th>عملیات</th>
+                        <th>مالیات</th>
                     </tr></thead>
                     <tbody id="omidInquiryRows">
-                        <tr><td colspan="14">برای جستجو، بازهٔ تاریخ را وارد کنید.</td></tr>
+                        <tr><td colspan="13">برای جستجو، بازهٔ تاریخ را وارد کنید.</td></tr>
                     </tbody>
                 </table>
             </div>

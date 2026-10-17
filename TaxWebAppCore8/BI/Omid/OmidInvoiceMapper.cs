@@ -27,16 +27,17 @@ namespace TaxWebAppCore8.BI.Omid
 
             var sourceHeader = source.Header;
 
-            // شماره ارسالی امید در مدل نمونه از نوع عددی است.
-            // اگر مقدار دیتابیس قابل تبدیل نباشد، در پیش‌نمایش null می‌ماند.
-            long? inno = null;
-            if (long.TryParse(
-                sourceHeader.Inno?.Replace("-", ""),
-                NumberStyles.Integer,
-                CultureInfo.InvariantCulture,
-                out long parsedInno))
+            // پیش از ساخت درخواست ارسال، شمارهٔ فاکتور را از دادهٔ اصلی بررسی می‌کنیم.
+            // در صورت خالی یا نامعتبر بودن، هیچ رکوردی رزرو و هیچ HTTP ارسالی انجام نمی‌شود.
+            if (!long.TryParse(
+                    sourceHeader.Inno?.Replace("-", ""),
+                    NumberStyles.Integer,
+                    CultureInfo.InvariantCulture,
+                    out long inno) || inno <= 0)
             {
-                inno = parsedInno;
+                throw new InvalidOperationException(
+                    $"شمارهٔ فاکتور (inno) برای فاکتور {sourceHeader.InvoiceId} " +
+                    "در دیتابیس خالی یا نامعتبر است؛ ارسال انجام نشد.");
             }
 
             var invoice = new OmidInvoice
