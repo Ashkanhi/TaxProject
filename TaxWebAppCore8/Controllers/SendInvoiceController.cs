@@ -446,8 +446,22 @@ namespace TaxWebAppCore8.Controllers
                 if (string.Equals(BMain.SrvInfo?.ServiceType?.Trim(),
                     "Omid", StringComparison.OrdinalIgnoreCase))
                 {
-                    var submittedIds = await new OmidSubmissionStore(BMain.SrvInfo)
+                    var omidStore = new OmidSubmissionStore(BMain.SrvInfo);
+                    var submittedIds = await omidStore
                         .GetSubmittedInvoiceIdsAsync(HttpContext.RequestAborted);
+                    var failedErrors = await omidStore
+                        .GetFailedErrorsAsync(HttpContext.RequestAborted);
+
+                    // خطای رد قطعی امید کنار همان فاکتور در ستون توضیح وضعیت دیده می‌شود.
+                    foreach (var invoice in list)
+                    {
+                        if (Guid.TryParse(invoice.InvoiceId, out var invoiceId) &&
+                            failedErrors.TryGetValue(invoiceId, out string? error))
+                        {
+                            invoice.fListOfErrorCaption = "خطای امید: " + error;
+                        }
+                    }
+
                     list = list.Where(invoice =>
                         Guid.TryParse(invoice.InvoiceId, out var invoiceId) &&
                         !submittedIds.Contains(invoiceId)).ToList();

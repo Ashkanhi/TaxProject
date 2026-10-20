@@ -2,6 +2,7 @@
 using System.Data;
 using System.Reflection;
 using System;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using Newtonsoft.Json;
 
@@ -16,13 +17,13 @@ namespace TaxServiceAndApp.BI
 {
     public static class Extentions
     {
-        public static T CreateItemFromRow<T>(this DataRow row) where T : new()
+        public static T CreateItemFromRow<T>(this DataRow row, bool convertNumericStringsForOmid = false) where T : new()
         {
             // create a new object
             T item = new T();
 
             // set the item
-            row.SetItemFromRow(item);
+            row.SetItemFromRow(item, convertNumericStringsForOmid);
 
             // return 
             return item;
@@ -42,7 +43,7 @@ namespace TaxServiceAndApp.BI
         //        }
         //    }
         //}
-        public static void SetItemFromRow<T>(this DataRow row, T item) where T : new()
+        public static void SetItemFromRow<T>(this DataRow row, T item, bool convertNumericStringsForOmid = false) where T : new()
         {
             // Go through each column in the DataRow
             foreach (DataColumn column in row.Table.Columns)
@@ -116,6 +117,16 @@ namespace TaxServiceAndApp.BI
                         else if (property.PropertyType == typeof(string) && row[column] is Int64 strintoint64)
                         {
                             property.SetValue(item, row[column].ToString());
+                        }
+                        else if (convertNumericStringsForOmid && property.PropertyType == typeof(string) &&
+                                 (row[column] is int || row[column] is short ||
+                                  row[column] is long || row[column] is decimal))
+                        {
+                            // فقط مسیر امید این تبدیل را فعال می‌کند؛ ریما رفتار قبلی را نگه می‌دارد.
+                            // بعضی ستون‌ها مثل MU عددی‌اند، اما DTO آن‌ها را رشته نگه می‌دارد.
+                            property.SetValue(
+                                item,
+                                Convert.ToString(row[column], CultureInfo.InvariantCulture));
                         }
                         else
                         {

@@ -5,10 +5,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using TaxServiceAndApp.BI;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using TaxWebAppCore8.BI.Omid;
 using TaxServiceAndApp.Models.SharedDTO;
 using TaxServiceAndApp.Models.TaxDTO;
+using Newtonsoft.Json.Linq;
 
 namespace TaxWebAppCore8.Controllers
 {
@@ -128,7 +130,7 @@ namespace TaxWebAppCore8.Controllers
             {
                 var store = new OmidSubmissionStore(BMain.SrvInfo);
                 var seenInvoiceIds = new HashSet<Guid>();
-                var trackingIds = new List<string>();
+                var requestIds = new List<string>();
 
                 foreach (Guid invoiceId in invoiceIds)
                 {
@@ -147,30 +149,102 @@ namespace TaxWebAppCore8.Controllers
                         invoiceId, cancellationToken);
 
                     if (submission == null ||
-                        string.IsNullOrWhiteSpace(submission.TrackingId) ||
+                        string.IsNullOrWhiteSpace(submission.RequestId) ||
                         submission.State == "Prepared" ||
                         submission.State == "Sending")
                     {
                         return BadRequest(new
                         {
                             success = false,
-                            message = $"فاکتور {invoiceId} هنوز شناسهٔ پیگیری معتبر برای استعلام ندارد."
+                            message = $"فاکتور {invoiceId} هنوز requestId معتبر برای استعلام ندارد."
                         });
                     }
 
-                    trackingIds.Add(submission.TrackingId.Trim());
+                    requestIds.Add(submission.RequestId.Trim());
                 }
 
-                // نسخهٔ چندتایی InquiryAsync همین حالا در OmidApiClient وجود دارد.
                 var client = HttpContext.RequestServices
                     .GetRequiredService<OmidApiClient>();
 
-                string responseJson = await client.InquiryAsync(
-                    trackingIds, cancellationToken);
+                // برای آزمون، استعلام تا آماده‌شدن نتیجه تکرار می‌شود.
+                // این کار فاکتور را دوباره ارسال نمی‌کند.
+                OmidInquiryRetryResult inquiry = await client.InquiryWithRetryAsync(
+                    requestIds, cancellationToken);
 
-                // پاسخ واقعی امید را فعلاً بدون تفسیر برمی‌گردانیم.
+                string? savedState = null;
+                string? savedMessage = null;
+                var itemResults = ReadInquiryItemResults(inquiry.ResponseJson);
+
+                // پاسخ آخرین فراخوانی را برای تک‌تک فاکتورهای همان درخواست
+                // ذخیره می‌کنیم. اگر پاسخ، requestId هر نتیجه را داشته باشد،
+                // وضعیت اختصاصی همان فاکتور را هم از روی آن تعیین می‌کنیم.
+                for (int i = 0; i < invoiceIds.Count; i++)
+                {
+                    string requestId = requestIds[i];
+                    string itemState;
+                    string? itemMessage;
+
+                    if (itemResults.TryGetValue(
+                        requestId,
+                        out (string State, string? Message) itemResult))
+                    {
+                        itemState = itemResult.State;
+                        itemMessage = itemResult.Message;
+                    }
+                    else if (invoiceIds.Count == 1 &&
+                             inquiry.HasFinalResult &&
+                             inquiry.FinalSuccess.HasValue)
+                    {
+                        itemState = inquiry.FinalSuccess.Value
+                            ? "Accepted"
+                            : "Failed";
+                        itemMessage = inquiry.FinalSuccess.Value
+                            ? null
+                            : inquiry.FinalMessage ?? "امید صورتحساب را نپذیرفت.";
+                    }
+                    else
+                    {
+                        itemState = "Pending";
+                        itemMessage = $"پس از {inquiry.Attempts} تلاش، نتیجهٔ نهایی هنوز آماده نیست.";
+                    }
+
+                    await store.SaveInquiryResultAsync(
+                        invoiceIds[i],
+                        itemState,
+                        itemMessage,
+                        inquiry.ResponseJson,
+                        cancellationToken);
+
+                    _logger.LogInformation(
+                        "استعلام امید برای فاکتور {InvoiceId} پس از {Attempts} تلاش با وضعیت {State} تمام شد.",
+                        invoiceIds[i], inquiry.Attempts, itemState);
+
+                    if (invoiceIds.Count == 1)
+                    {
+                        savedState = itemState;
+                        savedMessage = itemMessage;
+                        Response.Headers["X-Omid-Inquiry-State"] = itemState;
+                        Response.Headers["X-Omid-Inquiry-Message"] =
+                            Uri.EscapeDataString(itemMessage ?? string.Empty);
+                    }
+                }
+
+                // تعداد تلاش‌ها را برای نمایش در پنل در هدر پاسخ می‌گذاریم.
+                Response.Headers["X-Omid-Inquiry-Attempts"] =
+                    inquiry.Attempts.ToString();
+                Response.Headers["X-Omid-Inquiry-Final"] =
+                    inquiry.HasFinalResult ? "true" : "false";
+
+                OmidApiTraceLogger.TryWriteInquirySummary(
+                    invoiceIds,
+                    inquiry.Attempts,
+                    savedState,
+                    savedMessage,
+                    inquiry.ResponseJson);
+
+                // JSON نهایی امید بدون تغییر برگردانده می‌شود.
                 return Content(
-                    responseJson,
+                    inquiry.ResponseJson,
                     "application/json; charset=utf-8");
             }
             catch (Exception ex)
@@ -179,12 +253,102 @@ namespace TaxWebAppCore8.Controllers
                     ex,
                     "خطا در استعلام فاکتورهای انتخاب‌شده از امید");
 
+                // خطاهای زمان استعلام، مانند سایر خطاهای امید، سابقه‌دار می‌شوند.
+                try
+                {
+                    var errorStore = new OmidSubmissionStore(BMain.SrvInfo);
+                    foreach (Guid invoiceId in invoiceIds.Distinct())
+                    {
+                        await errorStore.LogAttemptErrorAsync(
+                            invoiceId,
+                            "Inquiry",
+                            "/api/Invoice/Invoiceinquiry",
+                            ex is System.Net.Http.HttpRequestException httpError &&
+                            httpError.StatusCode.HasValue
+                                ? (int)httpError.StatusCode.Value
+                                : null,
+                            "Error",
+                            ex.Message,
+                            CancellationToken.None);
+                    }
+                }
+                catch (Exception logError)
+                {
+                    _logger.LogWarning(
+                        logError,
+                        "ثبت سابقهٔ خطای استعلام امید در جدول انجام نشد");
+                }
+
                 return StatusCode(502, new
                 {
                     success = false,
                     message = "استعلام امید ناموفق بود؛ جزئیات را در لاگ سیستم بررسی کنید."
                 });
             }
+        }
+
+        /// <summary>
+        /// وضعیت و پیام هر نتیجه را با requestId متناظر می‌کند.
+        /// </summary>
+        private static Dictionary<string, (string State, string? Message)>
+            ReadInquiryItemResults(string responseJson)
+        {
+            var result = new Dictionary<string, (string State, string? Message)>(
+                StringComparer.OrdinalIgnoreCase);
+
+            try
+            {
+                JObject root = JObject.Parse(responseJson);
+                JToken? data = root["data"];
+                IEnumerable<JToken> rows = data is JArray array
+                    ? array
+                    : data is JObject single
+                        ? new[] { single }
+                        : Array.Empty<JToken>();
+
+                foreach (JToken rowToken in rows)
+                {
+                    if (rowToken is not JObject row)
+                        continue;
+
+                    string? requestId = row["requestId"]?.Value<string>();
+                    if (string.IsNullOrWhiteSpace(requestId))
+                        continue;
+
+                    string? invoiceStatus = row["invoiceStatus"]?.Value<string>();
+                    JToken? resultData = row["inquiryResultModel"]?["data"]
+                        ?? row["data"];
+                    bool? success = resultData?["success"]?.Value<bool>();
+
+                    string state = string.Equals(
+                        invoiceStatus, "ACCEPTED", StringComparison.OrdinalIgnoreCase) ||
+                        success == true
+                            ? "Accepted"
+                            : string.Equals(
+                                invoiceStatus, "REJECTED", StringComparison.OrdinalIgnoreCase) ||
+                              success == false
+                                ? "Failed"
+                                : "Pending";
+
+                    string? message = resultData?["error"]?.ToString();
+                    if (string.IsNullOrWhiteSpace(message))
+                        message = row["errors"]?.ToString();
+                    if (string.IsNullOrWhiteSpace(message))
+                        message = row["message"]?.ToString();
+                    if (string.IsNullOrWhiteSpace(message) && state == "Failed")
+                        message = "امید صورتحساب را نپذیرفت.";
+                    if (state == "Accepted")
+                        message = null;
+
+                    result[requestId.Trim()] = (state, message);
+                }
+            }
+            catch
+            {
+                // پاسخ ناسازگار با JSON، وضعیت اختصاصی ندارد؛ چرخه در Pending می‌ماند.
+            }
+
+            return result;
         }
 
 
@@ -289,6 +453,7 @@ namespace TaxWebAppCore8.Controllers
                     {
                         invoice.InvoiceId,
                         invoice.State,
+                        invoice.RequestId,
                         invoice.TrackingId,
                         invoice.InvoiceNumber,
                         InvoiceDate = header?.PersianCreateDate,
@@ -300,6 +465,9 @@ namespace TaxWebAppCore8.Controllers
                         TotalTax = header?.TotalTax,
                         invoice.Fingerprint,
                         invoice.LastError,
+                        invoice.LastErrorStage,
+                        invoice.LastInquiryResponseJson,
+                        invoice.LastInquiryUtc,
                         invoice.CreatedUtc,
                         invoice.UpdatedUtc
                     });

@@ -96,7 +96,11 @@ namespace TaxServiceAndApp.Models
   $"GetLastInvoiceForSend:isForTis == 2:" + "::invoiceID::" + invoice.InvoiceID);
                         //var rows = ExecCommandToObject<BodyItemDto>(string.Format(Consts.GetLastInvoiceDetailQuery, invoiceId, isReturn, 0));
                         var rows = ExecCommandToObject<BodyItemDtoExtend>(string.Format(Consts.Usp_TaxCartable_DetailInfo,
-                            invoice.InvoiceID, invoice.StoreID, invoice.BookerWorkstationID));
+                            invoice.InvoiceID, invoice.StoreID, invoice.BookerWorkstationID),
+                            // تبدیل جدید فقط برای امید فعال است؛ سایر سرویس‌ها همان مپ قبلی را دارند.
+                            convertNumericStringsForOmid: string.Equals(
+                                BMain.SrvInfo?.ServiceType?.Trim(), "Omid",
+                                StringComparison.OrdinalIgnoreCase));
 
 
                         var res = ObjectMapper.TargetObject<TaxInvoiceHeaderSysDTO>
@@ -289,6 +293,11 @@ namespace TaxServiceAndApp.Models
         }
         public List<T> ExecCommandToObject<T>(string command) where T : new()
         {
+            return ExecCommandToObject<T>(command, convertNumericStringsForOmid: false);
+        }
+
+        private List<T> ExecCommandToObject<T>(string command, bool convertNumericStringsForOmid) where T : new()
+        {
             ClsTools.Logger.NPSLogger.GetLogger(ClsTools.Logger.ModuleName.ArghamCompany_TaxGoverment)
              .LogInfoMessage($" BaranDB : ExecCommandToObject : " + command);
 
@@ -315,7 +324,7 @@ namespace TaxServiceAndApp.Models
 
                 // --- راه حل اصلاح شده ---
                 // پردازش به صورت خطی انجام می‌شود تا ترتیبی که از SQL می‌آید دقیقاً حفظ شود
-                lst = dt.AsEnumerable().Select(r => r.CreateItemFromRow<T>()).ToList();
+                lst = dt.AsEnumerable().Select(r => r.CreateItemFromRow<T>(convertNumericStringsForOmid)).ToList();
                 // ------------------------
             }
             catch (Exception ex)

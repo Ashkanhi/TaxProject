@@ -183,6 +183,7 @@ namespace TaxWebAppCore8.Controllers
                     {
                         invoiceId = sent.LocalInvoiceId,
                         state = "Pending",
+                        requestId = sent.Receipt.RequestId,
                         trackingId = sent.Receipt.TrackingId
                     }
                 }
@@ -209,6 +210,7 @@ namespace TaxWebAppCore8.Controllers
                         invoiceId = item.InvoiceId,
                         inno = item.Inno,
                         state = item.State,
+                        requestId = item.RequestId,
                         trackingId = item.TrackingId,
                         message = item.Message
                     });
@@ -286,6 +288,7 @@ namespace TaxWebAppCore8.Controllers
                         Data = new
                         {
                             sent.LocalInvoiceId,
+                            sent.Receipt.RequestId,
                             sent.Receipt.TrackingId,
                             sent.Receipt.InvoiceNumber,
                             sent.Receipt.Fingerprint
@@ -369,6 +372,7 @@ namespace TaxWebAppCore8.Controllers
                     {
                         status.InvoiceId,
                         status.State,
+                        status.RequestId,
                         status.TrackingId,
                         status.InvoiceNumber,
                         status.Fingerprint,
@@ -422,18 +426,18 @@ namespace TaxWebAppCore8.Controllers
                     return NotFound("رکورد ارسال امید برای این فاکتور پیدا نشد.");
 
                 if (submission.State != "Pending" ||
-                    string.IsNullOrWhiteSpace(submission.TrackingId))
+                    string.IsNullOrWhiteSpace(submission.RequestId))
                 {
                     return BadRequest(
-                        "این فاکتور در وضعیت Pending با شناسهٔ پیگیری معتبر نیست.");
+                        "این فاکتور در وضعیت Pending با requestId معتبر نیست.");
                 }
 
-                // با trackingId ذخیره‌شده، نتیجه را از امید می‌گیریم.
+                // با requestId ذخیره‌شده، نتیجه را از امید می‌گیریم.
                 var client = HttpContext.RequestServices
                     .GetRequiredService<OmidApiClient>();
 
                 string responseJson = await client.InquiryAsync(
-                    submission.TrackingId,
+                    submission.RequestId,
                     cancellationToken);
 
                 // فعلاً پاسخ واقعی امید را بدون تغییر نمایش می‌دهیم.

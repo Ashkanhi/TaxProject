@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.IO;
+using System.Collections.Generic;
 using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -123,6 +124,64 @@ namespace TaxWebAppCore8.BI.Omid
                 // فقط نام نوع خطا را ثبت می‌کنیم، نه دادهٔ درخواست را.
                 System.Diagnostics.Trace.TraceWarning(
                     "Omid API trace could not be written: {0}",
+                    ex.GetType().Name);
+            }
+        }
+
+        /// <summary>
+        /// نتیجهٔ نهایی یک چرخهٔ retry را در همان فایل لاگ امید ثبت می‌کند.
+        /// درخواست و پاسخ خام هر تلاش نیز جداگانه در همین فایل ثبت شده‌اند.
+        /// </summary>
+        public static void TryWriteInquirySummary(
+            IReadOnlyCollection<Guid> invoiceIds,
+            int attempts,
+            string? state,
+            string? message,
+            string? lastResponse)
+        {
+            try
+            {
+                DateTime now = DateTime.Now;
+                string directory = Path.Combine(
+                    Environment.GetFolderPath(
+                        Environment.SpecialFolder.CommonApplicationData),
+                    "ArghamFinanceCompany",
+                    "Logs");
+                Directory.CreateDirectory(directory);
+
+                string filePath = Path.Combine(
+                    directory,
+                    $"OmidApiTrace_{now:yyyyMMdd}.txt");
+
+                var entry = new StringBuilder()
+                    .Append(now.ToString(
+                        "yyyy-MM-dd HH:mm:ss,fff",
+                        CultureInfo.InvariantCulture))
+                    .AppendLine(" | تابع: InquiryWithRetryAsync | نتیجهٔ چرخهٔ استعلام")
+                    .Append("تعداد تلاش‌ها: ")
+                    .AppendLine(attempts.ToString(CultureInfo.InvariantCulture))
+                    .Append("تعداد فاکتورها: ")
+                    .AppendLine(invoiceIds.Count.ToString(CultureInfo.InvariantCulture))
+                    .Append("شناسهٔ فاکتورها: ")
+                    .AppendLine(string.Join(", ", invoiceIds))
+                    .Append("وضعیت ذخیره‌شده: ")
+                    .AppendLine(state ?? "برای دستهٔ چندتایی نگاشت نشد")
+                    .AppendLine("شرح نتیجه:")
+                    .AppendLine(string.IsNullOrWhiteSpace(message) ? "(ندارد)" : message)
+                    .AppendLine("آخرین پاسخ امید:")
+                    .AppendLine(SanitizeJson(lastResponse))
+                    .AppendLine()
+                    .ToString();
+
+                lock (FileLock)
+                {
+                    File.AppendAllText(filePath, entry, Encoding.UTF8);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceWarning(
+                    "Omid inquiry summary could not be written: {0}",
                     ex.GetType().Name);
             }
         }

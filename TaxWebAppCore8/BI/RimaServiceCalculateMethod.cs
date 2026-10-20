@@ -120,6 +120,9 @@ namespace TaxServiceAndApp.Models
             ClsTools.Logger.NPSLogger.GetLogger(ClsTools.Logger.ModuleName.ArghamCompany_TaxGoverment).
    LogInfoMessage($"BaranDB:{MethodBase.GetCurrentMethod().DeclaringType.Name}::"
 + "GetInvoice:InvoiceID" + invoice.InvoiceID);
+
+
+
             Invoice inv = _context.GetLastInvoiceForSend(
                (short)(isCancel == true ? 3 : 1), invoice, 2);
 

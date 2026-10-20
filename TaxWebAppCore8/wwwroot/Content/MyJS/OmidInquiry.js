@@ -51,6 +51,22 @@
         return cell;
     }
 
+    function showSavedResponse(invoice) {
+        results.replaceChildren();
+        const heading = document.createElement("div");
+        heading.textContent = "آخرین پاسخ ذخیره‌شدهٔ امید برای فاکتور " +
+            (invoice.InvoiceNumber || invoice.InvoiceId) +
+            (invoice.LastInquiryUtc
+                ? " — " + new Date(invoice.LastInquiryUtc).toLocaleString("fa-IR")
+                : "");
+        const pre = document.createElement("pre");
+        pre.style.whiteSpace = "pre-wrap";
+        pre.style.direction = "ltr";
+        pre.style.textAlign = "left";
+        pre.textContent = invoice.LastInquiryResponseJson || "پاسخی ذخیره نشده است.";
+        results.append(heading, pre);
+    }
+
     function selectedInvoices() {
         return visibleInvoices.filter(function (invoice) {
             return selectedIds.has(invoice.InvoiceId);
@@ -106,8 +122,21 @@
             addTextCell(tr, invoice.InvoiceDate);
             addTextCell(tr, invoice.CustomerName);
             addTextCell(tr, "رکورد محلی امید");
-            addTextCell(tr, inquiryNotes.get(invoice.InvoiceId) ||
-                "هنوز استعلام نشده است.");
+            const inquiryCell = addTextCell(tr, inquiryNotes.get(invoice.InvoiceId) ||
+                (invoice.LastInquiryUtc
+                    ? "آخرین پاسخ در " + new Date(invoice.LastInquiryUtc).toLocaleString("fa-IR")
+                    : "هنوز استعلام نشده است."));
+            if (invoice.LastInquiryResponseJson) {
+                const responseButton = document.createElement("button");
+                responseButton.type = "button";
+                responseButton.className = "btn btn-xs btn-default";
+                responseButton.style.marginRight = "6px";
+                responseButton.textContent = "مشاهدهٔ پاسخ آخر";
+                responseButton.addEventListener("click", function () {
+                    showSavedResponse(invoice);
+                });
+                inquiryCell.appendChild(responseButton);
+            }
             addTextCell(tr, money(invoice.NetPrice));
             addTextCell(tr, money(invoice.TotalTax));
 
@@ -236,7 +265,9 @@
             for (let start = 0; start < selected.length; start += 100) {
                 const batch = selected.slice(start, start + 100);
                 const number = Math.floor(start / 100) + 1;
-                setStatus("در حال استعلام دستهٔ " + number + " از امید...");
+                setStatus("در حال پیگیری دستهٔ " + number + " از امید؛ " +
+                    "در صورت خالی بودن نتیجه، استعلام هر ۳۰ ثانیه تکرار می‌شود " +
+                    "(حداکثر ۲۰ تلاش). لطفاً پنجره را نبندید.");
 
                 const response = await fetch(page.dataset.inquiryUrl, {
                     method: "POST",
@@ -251,25 +282,57 @@
                 const text = await response.text();
                 let data;
                 try { data = JSON.parse(text); } catch { data = text; }
+                const attempts = Number(
+                    response.headers.get("X-Omid-Inquiry-Attempts") || 1);
+                const hasFinalResult =
+                    response.headers.get("X-Omid-Inquiry-Final") === "true";
+                const savedState =
+                    response.headers.get("X-Omid-Inquiry-State");
+                const savedMessageHeader =
+                    response.headers.get("X-Omid-Inquiry-Message");
+                let savedMessage = "";
+                try {
+                    savedMessage = savedMessageHeader
+                        ? decodeURIComponent(savedMessageHeader) : "";
+                } catch { savedMessage = ""; }
 
                 const failed = !response.ok ||
                     (data && typeof data === "object" &&
                      (data.success === false || data.data?.success === false));
-                const noFinalResult = !failed && data &&
-                    typeof data === "object" && data.data == null;
+                const noFinalResult = !failed && !hasFinalResult;
                 const message = failed
                     ? "استعلام ناموفق بود؛ پاسخ و لاگ امید را بررسی کنید."
                     : noFinalResult
-                        ? "استعلام انجام شد؛ نتیجهٔ نهایی فاکتور هنوز آماده نیست."
-                        : "پاسخ استعلام دریافت شد؛ جزئیات را در JSON بررسی کنید.";
+                        ? "پس از " + attempts + " تلاش، نتیجهٔ نهایی هنوز آماده نیست."
+                        : "نتیجه پس از " + attempts +
+                          " تلاش دریافت شد؛ جزئیات را در JSON بررسی کنید.";
 
                 showResponse("دستهٔ " + number + " — فاکتورهای " +
                     batch.map(function (item) {
                         return item.InvoiceNumber || item.InvoiceId;
-                    }).join("، "), data, message);
+                    }).join("، "), data, savedMessage || message);
 
-                for (const invoice of batch)
-                    inquiryNotes.set(invoice.InvoiceId, message);
+                for (const invoice of batch) {
+                    if (batch.length === 1 && savedState) {
+                        const current = invoices.find(function (item) {
+                            return item.InvoiceId === invoice.InvoiceId;
+                        });
+                        if (current) {
+                            current.State = savedState;
+                            current.LastError = savedMessage || null;
+                        }
+                    }
+                    const current = invoices.find(function (item) {
+                        return item.InvoiceId === invoice.InvoiceId;
+                    });
+                    if (current) {
+                        current.LastInquiryResponseJson = text;
+                        current.LastInquiryUtc = new Date().toISOString();
+                    }
+                    inquiryNotes.set(
+                        invoice.InvoiceId,
+                        savedMessage || message);
+                }
 
                 if (failed)
                     throw new Error(data?.message || message);

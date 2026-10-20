@@ -70,6 +70,44 @@ public static class DatabaseStartupInitializer
         END CATCH;
         """;
 
+    private const string EnsureOmidApiAttemptLogSql = """
+        IF OBJECT_ID(N'dbo.OmidInvoiceSubmission', N'U') IS NOT NULL
+        BEGIN
+            IF COL_LENGTH(N'dbo.OmidInvoiceSubmission', N'LastErrorStage') IS NULL
+                ALTER TABLE dbo.OmidInvoiceSubmission
+                    ADD LastErrorStage NVARCHAR(40) NULL;
+
+            IF COL_LENGTH(N'dbo.OmidInvoiceSubmission', N'LastInquiryResponseJson') IS NULL
+                ALTER TABLE dbo.OmidInvoiceSubmission
+                    ADD LastInquiryResponseJson NVARCHAR(MAX) NULL;
+
+            IF COL_LENGTH(N'dbo.OmidInvoiceSubmission', N'LastInquiryUtc') IS NULL
+                ALTER TABLE dbo.OmidInvoiceSubmission
+                    ADD LastInquiryUtc DATETIME2(3) NULL;
+        END;
+
+        IF OBJECT_ID(N'dbo.OmidApiAttemptLog', N'U') IS NULL
+        BEGIN
+            CREATE TABLE dbo.OmidApiAttemptLog
+            (
+                Id BIGINT IDENTITY(1,1) NOT NULL
+                    CONSTRAINT PK_OmidApiAttemptLog PRIMARY KEY,
+                InvoiceId UNIQUEIDENTIFIER NULL,
+                Operation NVARCHAR(40) NOT NULL,
+                Endpoint NVARCHAR(200) NOT NULL,
+                HttpStatusCode INT NULL,
+                Outcome NVARCHAR(30) NOT NULL,
+                ErrorMessage NVARCHAR(2000) NOT NULL,
+                CreatedUtc DATETIME2(3) NOT NULL
+                    CONSTRAINT DF_OmidApiAttemptLog_CreatedUtc
+                    DEFAULT SYSUTCDATETIME()
+            );
+
+            CREATE INDEX IX_OmidApiAttemptLog_InvoiceId_CreatedUtc
+                ON dbo.OmidApiAttemptLog (InvoiceId, CreatedUtc DESC);
+        END;
+        """;
+
     public static void EnsureRequiredObjects(string? connectionString)
     {
         var logger = ClsTools.Logger.NPSLogger.GetLogger(
@@ -98,6 +136,17 @@ public static class DatabaseStartupInitializer
             logger.LogInfoMessage(
                 $"{nameof(DatabaseStartupInitializer)}::TaxGovermentSaveInvoiceLogInsert::" +
                 (wasCreated ? "Created" : "AlreadyExists"));
+
+            using var omidLogCommand = new SqlCommand(
+                EnsureOmidApiAttemptLogSql,
+                connection)
+            {
+                CommandType = CommandType.Text,
+                CommandTimeout = 30
+            };
+            omidLogCommand.ExecuteNonQuery();
+            logger.LogInfoMessage(
+                $"{nameof(DatabaseStartupInitializer)}::OmidApiAttemptLog::Ensured");
         }
         catch (Exception ex)
         {

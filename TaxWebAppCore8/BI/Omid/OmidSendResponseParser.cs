@@ -19,6 +19,7 @@ namespace TaxWebAppCore8.BI.Omid
     // اطلاعات پیگیری مربوط به یک فاکتور در پاسخ امید.
     public sealed class OmidSendReceipt
     {
+        public string RequestId { get; set; } = string.Empty;
         public string TrackingId { get; set; } = string.Empty;
         public string InvoiceNumber { get; set; } = string.Empty;
         public string Fingerprint { get; set; } = string.Empty;
@@ -49,25 +50,36 @@ namespace TaxWebAppCore8.BI.Omid
                     ex);
             }
 
-            // مطابق پروژهٔ نمونه، نتیجهٔ اصلی ارسال در data قرار دارد.
-            if (root["data"] is not JObject data)
+            // بعضی نسخه‌های پاسخ، نتیجه را در data.success/data.data می‌گذارند؛
+            // پاسخ جدید امید ممکن است receipt را مستقیم در data برگرداند.
+            if (root["data"] is not JToken responseData ||
+                responseData.Type == JTokenType.Null)
                 throw new InvalidOperationException(
                     "بخش data در پاسخ ارسال امید پیدا نشد.");
 
-            if (data["success"]?.Type != JTokenType.Boolean)
-                throw new InvalidOperationException(
-                    "فیلد data.success در پاسخ ارسال امید پیدا نشد.");
+            JObject? envelope = responseData as JObject;
+            bool hasNestedResult =
+                envelope?["success"]?.Type == JTokenType.Boolean;
 
             var result = new OmidSendResponse
             {
-                Success = data["success"]!.Value<bool>(),
-                StatusCode = data["statusCode"]?.Value<int?>(),
-                Message = data["message"]?.Value<string>()
+                Success = hasNestedResult
+                    ? envelope!["success"]!.Value<bool>()
+                    : root["success"]?.Value<bool>() ?? false,
+                StatusCode = envelope?["statusCode"]?.Value<int?>()
+                    ?? root["statusCode"]?.Value<int?>(),
+                Message = envelope?["message"]?.Value<string>()
+                    ?? root["message"]?.Value<string>()
                     ?? string.Empty
             };
 
-            // در نمونهٔ امید، نتیجهٔ هر فاکتور در آرایهٔ data.data است.
-            if (data["data"] is JArray invoiceResults)
+            // پاسخ قدیمی‌تر: data.data آرایهٔ رسیدهاست.
+            // پاسخ جدیدتر: خود data یک رسید تکی است.
+            JToken? receiptData = hasNestedResult
+                ? envelope!["data"]
+                : responseData;
+
+            if (receiptData is JArray invoiceResults)
             {
                 foreach (JToken item in invoiceResults)
                 {
@@ -75,24 +87,33 @@ namespace TaxWebAppCore8.BI.Omid
                         throw new InvalidOperationException(
                             "یکی از ردیف‌های پاسخ ارسال امید معتبر نیست.");
 
-                    result.Receipts.Add(new OmidSendReceipt
-                    {
-                        TrackingId =
-                            invoiceResult["trackingId"]?.Value<string>()
-                            ?? string.Empty,
-
-                        InvoiceNumber =
-                            invoiceResult["inno"]?.Value<string>()
-                            ?? string.Empty,
-
-                        Fingerprint =
-                            invoiceResult["fingerprint"]?.Value<string>()
-                            ?? string.Empty
-                    });
+                    result.Receipts.Add(ParseReceipt(invoiceResult));
                 }
+            }
+            else if (receiptData is JObject singleReceipt &&
+                     (singleReceipt["requestId"] != null ||
+                      singleReceipt["trackingId"] != null ||
+                      singleReceipt["inno"] != null))
+            {
+                result.Receipts.Add(ParseReceipt(singleReceipt));
             }
 
             return result;
+        }
+
+        private static OmidSendReceipt ParseReceipt(JObject value)
+        {
+            return new OmidSendReceipt
+            {
+                RequestId = value["requestId"]?.Value<string>()
+                    ?? string.Empty,
+                TrackingId = value["trackingId"]?.Value<string>()
+                    ?? string.Empty,
+                InvoiceNumber = value["inno"]?.Value<string>()
+                    ?? string.Empty,
+                Fingerprint = value["fingerprint"]?.Value<string>()
+                    ?? string.Empty
+            };
         }
 
         /// <summary>
@@ -124,12 +145,12 @@ namespace TaxWebAppCore8.BI.Omid
 
             var receipt = response.Receipts[0];
 
-            // trackingId برای استعلام بعدی و اتصال پاسخ به فاکتور محلی لازم است.
+            // طبق پاسخ جدید امید، requestId شناسهٔ لازم برای استعلام است.
             if (receipt == null ||
-                string.IsNullOrWhiteSpace(receipt.TrackingId))
+                string.IsNullOrWhiteSpace(receipt.RequestId))
             {
                 throw new InvalidOperationException(
-                    "امید درخواست را پذیرفت، اما trackingId برنگرداند.");
+                    "امید درخواست را پذیرفت، اما requestId برنگرداند؛ استعلام ممکن نیست.");
             }
 
             return receipt;

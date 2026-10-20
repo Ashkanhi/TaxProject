@@ -1122,7 +1122,9 @@ async function SendFactorForTax(row) {
             return;
         }
 
-        if (localStatus.found === true) {
+        if (localStatus.found === true &&
+            String(localStatus.Data && localStatus.Data.State || '')
+                .trim().toLowerCase() !== 'failed') {
             var previous = localStatus.Data;
             var message = 'این فاکتور قبلاً در امید ثبت شده است.'
                 + '\nوضعیت محلی: ' + previous.State;
@@ -1136,8 +1138,8 @@ async function SendFactorForTax(row) {
             return;
         }
 
-        // فقط وقتی رکورد قبلی وجود ندارد، ارسال واقعی آغاز می‌شود.
-        // رزرو اتمی سمت سرور همچنان جلوی درخواست‌های هم‌زمان را می‌گیرد.
+        // اگر وضعیت قبلی Failed باشد، خطای قطعی ثبت شده و ارسال مجدد مجاز است.
+        // رزرو اتمی سمت سرور جلوی ارسال هم‌زمان یا تکراری را می‌گیرد.
         var response = await $.post(PostSendInvoiceURL, request);
         var result = response && response.Data;
 

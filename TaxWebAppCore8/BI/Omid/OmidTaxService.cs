@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
 using TaxServiceAndApp.Models;
 using TaxServiceAndApp.Models.SharedDTO;
 using TaxWebAppCore8.Models.SharedDTO;
@@ -161,6 +164,31 @@ namespace TaxWebAppCore8.BI.Omid
 
             var store = new OmidSubmissionStore(_serverInfo);
 
+            // ابتدا Login می‌کنیم؛ اگر شبکه یا سرویس ورود مشکل داشته باشد،
+            // هنوز هیچ رکوردی Sending نمی‌شود و فاکتور قفل نخواهد شد.
+            string token;
+            try
+            {
+                token = await client.LoginAsync(cancellationToken);
+            }
+            catch (Exception loginError)
+            {
+                await TryLogAttemptErrorAsync(
+                    store,
+                    localInvoiceId,
+                    "Login",
+                    "/api/Auth/login",
+                    loginError,
+                    "LoginFailed");
+
+                // خطای ورود پیش از ارسال رخ می‌دهد؛ درخواست صورتحساب به امید
+                // نرسیده و کاربر می‌تواند پس از رفع ارتباط دوباره تلاش کند.
+                throw new InvalidOperationException(
+                    "ورود به امید ناموفق بود؛ درخواست ارسال صورتحساب هنوز به امید ارسال نشده است. " +
+                    "وضعیت قبلی فاکتور تغییر نکرده و پس از رفع مشکل ارتباط می‌توانید دوباره ارسال کنید.",
+                    loginError);
+            }
+
             bool saved = await store.TrySaveOmidInvoiceSubmissionAsync(
                 localInvoiceId,
                 cancellationToken);
@@ -178,6 +206,7 @@ namespace TaxWebAppCore8.BI.Omid
             {
                 OmidSendResponse response = await client.SendInvoiceAsync(
                     payload,
+                    token,
                     cancellationToken);
 
                 OmidSendReceipt receipt =
@@ -195,6 +224,46 @@ namespace TaxWebAppCore8.BI.Omid
             }
             catch (Exception sendError)
             {
+                if (TryGetDefinitiveRejection(sendError, out string rejection))
+                {
+                    await TryLogAttemptErrorAsync(
+                        store,
+                        localInvoiceId,
+                        "SendInvoice",
+                        "/api/Invoice/SendInvoice",
+                        sendError,
+                        "Rejected",
+                        rejection);
+
+                    try
+                    {
+                        await store.MarkFailedAsync(
+                            localInvoiceId,
+                            rejection,
+                            CancellationToken.None);
+                    }
+                    catch (Exception stateError)
+                    {
+                        throw new AggregateException(
+                            "امید صورتحساب را رد کرد، اما ثبت وضعیت ردشده در دیتابیس ناموفق بود.",
+                            sendError,
+                            stateError);
+                    }
+
+                    throw new InvalidOperationException(
+                        $"درخواست به امید رسید، اما صورتحساب پذیرفته نشد. علت: {rejection} " +
+                        "پس از اصلاح اطلاعات، امکان ارسال دوباره وجود دارد.",
+                        sendError);
+                }
+
+                await TryLogAttemptErrorAsync(
+                    store,
+                    localInvoiceId,
+                    "SendInvoice",
+                    "/api/Invoice/SendInvoice",
+                    sendError,
+                    "Unknown");
+
                 // قطع ارتباط پس از شروع ارسال ثابت نمی‌کند که امید
                 // فاکتور را دریافت نکرده است؛ ارسال خودکار مجدد ممنوع است.
                 try
@@ -271,6 +340,34 @@ namespace TaxWebAppCore8.BI.Omid
 
             var store = new OmidSubmissionStore(_serverInfo);
 
+            // ورود پیش از ثبت Sending انجام می‌شود تا خطای Login به اشتباه
+            // به عنوان نتیجهٔ نامشخص ارسال صورتحساب ذخیره نشود.
+            string token;
+            try
+            {
+                token = await client.LoginAsync(cancellationToken);
+            }
+            catch (Exception loginError)
+            {
+                foreach (Guid invoiceId in invoiceIds)
+                {
+                    await TryLogAttemptErrorAsync(
+                        store,
+                        invoiceId,
+                        "Login",
+                        "/api/Auth/login",
+                        loginError,
+                        "LoginFailed");
+                }
+
+                // Login قبل از ذخیرهٔ دسته و پیش از ارسال صورتحساب انجام می‌شود؛
+                // بنابراین در این نقطه ارسال امن است که پس از رفع مشکل تکرار شود.
+                throw new InvalidOperationException(
+                    "ورود به امید ناموفق بود؛ هیچ‌یک از صورتحساب‌های این دسته ارسال نشده‌اند. " +
+                    "وضعیت قبلی آن‌ها تغییر نکرده و پس از رفع مشکل ارتباط می‌توانید دوباره ارسال کنید.",
+                    loginError);
+            }
+
             // همهٔ اعضای دسته با هم در OmidInvoiceSubmission ذخیره می‌شوند.
             // اگر یکی از قبل وجود داشته باشد، درخواست به امید ارسال نمی‌شود.
             bool saved =
@@ -338,6 +435,7 @@ namespace TaxWebAppCore8.BI.Omid
                 // این خط یک درخواست HTTP با تمام اعضای payload.Invoices می‌فرستد.
                 OmidSendResponse response = await client.SendInvoiceAsync(
                     payload,
+                    token,
                     cancellationToken);
 
                 if (response == null || !response.Success)
@@ -382,12 +480,12 @@ namespace TaxWebAppCore8.BI.Omid
 
                 foreach (var item in result.Items)
                 {
-                    // فقط یک رسید معتبر با trackingId قابل ثبت است.
+                    // برای استعلام، رسید باید requestId داشته باشد.
                     if (!receiptsByInno.TryGetValue(
                             item.Inno,
                             out List<OmidSendReceipt>? matches) ||
                         matches.Count != 1 ||
-                        string.IsNullOrWhiteSpace(matches[0].TrackingId))
+                        string.IsNullOrWhiteSpace(matches[0].RequestId))
                     {
                         continue;
                     }
@@ -400,6 +498,7 @@ namespace TaxWebAppCore8.BI.Omid
                         CancellationToken.None);
 
                     item.State = "Pending";
+                    item.RequestId = receipt.RequestId;
                     item.TrackingId = receipt.TrackingId;
                     withoutStoredReceipt.Remove(item.InvoiceId);
                 }
@@ -428,6 +527,53 @@ namespace TaxWebAppCore8.BI.Omid
             }
             catch (Exception sendError)
             {
+                if (TryGetDefinitiveRejection(sendError, out string rejection))
+                {
+                    var rejectionStateErrors = new List<Exception>();
+                    foreach (var item in result.Items)
+                    {
+                        if (!withoutStoredReceipt.Contains(item.InvoiceId))
+                            continue;
+
+                        await TryLogAttemptErrorAsync(
+                            store,
+                            item.InvoiceId,
+                            "SendInvoice",
+                            "/api/Invoice/SendInvoice",
+                            sendError,
+                            "Rejected",
+                            rejection);
+
+                        try
+                        {
+                            await store.MarkFailedAsync(
+                                item.InvoiceId,
+                                rejection,
+                                CancellationToken.None);
+                            item.State = "Failed";
+                            item.Message = rejection;
+                            withoutStoredReceipt.Remove(item.InvoiceId);
+                        }
+                        catch (Exception stateError)
+                        {
+                            rejectionStateErrors.Add(stateError);
+                        }
+                    }
+
+                    if (rejectionStateErrors.Count > 0)
+                    {
+                        rejectionStateErrors.Insert(0, sendError);
+                        throw new AggregateException(
+                            "امید دستهٔ صورتحساب‌ها را رد کرد، اما ثبت وضعیت بعضی فاکتورها ناموفق بود.",
+                            rejectionStateErrors);
+                    }
+
+                    throw new InvalidOperationException(
+                        $"درخواست دسته‌ای به امید رسید، اما صورتحساب‌ها پذیرفته نشدند. علت: {rejection} " +
+                        "پس از اصلاح اطلاعات، امکان ارسال دوباره وجود دارد.",
+                        sendError);
+                }
+
                 // بعد از شروع ارسال، قطع ارتباط لزوماً به معنی
                 // نرسیدن درخواست به امید نیست.
                 var stateErrors = new List<Exception>();
@@ -436,6 +582,14 @@ namespace TaxWebAppCore8.BI.Omid
                 {
                     if (!withoutStoredReceipt.Contains(item.InvoiceId))
                         continue;
+
+                    await TryLogAttemptErrorAsync(
+                        store,
+                        item.InvoiceId,
+                        "SendInvoice",
+                        "/api/Invoice/SendInvoice",
+                        sendError,
+                        "Unknown");
 
                     try
                     {
@@ -468,6 +622,101 @@ namespace TaxWebAppCore8.BI.Omid
                     "نتیجهٔ ارسال دسته‌ای نامشخص است. " +
                     "فاکتورهای بدون رسید Unknown شدند؛ آن‌ها را خودکار دوباره ارسال نکنید.",
                     sendError);
+            }
+        }
+
+        /// <summary>
+        /// پاسخ HTTP منفیِ ساختاریافتهٔ امید را از قطع ارتباط تشخیص می‌دهد.
+        /// فقط وقتی پاسخ واقعی با success=false و errors دریافت شده باشد،
+        /// نتیجه را رد قطعی در نظر می‌گیریم؛ سایر خطاها Unknown می‌مانند.
+        /// </summary>
+        private static bool TryGetDefinitiveRejection(
+            Exception exception,
+            out string rejection)
+        {
+            rejection = string.Empty;
+
+            if (exception is not HttpRequestException httpError ||
+                httpError.StatusCode == null)
+            {
+                return false;
+            }
+
+            const string responseMarker = "پاسخ سرور:";
+            int markerIndex = httpError.Message.IndexOf(
+                responseMarker,
+                StringComparison.Ordinal);
+
+            if (markerIndex < 0)
+                return false;
+
+            string responseJson = httpError.Message[
+                (markerIndex + responseMarker.Length)..].Trim();
+
+            try
+            {
+                JObject response = JObject.Parse(responseJson);
+                if (response["success"]?.Value<bool>() != false)
+                    return false;
+
+                JToken? errors = response["errors"];
+                if (errors is JArray errorArray)
+                {
+                    rejection = string.Join(
+                        " | ",
+                        errorArray.Select(item => item?.ToString())
+                            .Where(message => !string.IsNullOrWhiteSpace(message)));
+                }
+                else if (errors != null && errors.Type != JTokenType.Null)
+                {
+                    rejection = errors.ToString();
+                }
+
+                if (string.IsNullOrWhiteSpace(rejection))
+                    rejection = response["message"]?.ToString() ?? string.Empty;
+
+                return !string.IsNullOrWhiteSpace(rejection);
+            }
+            catch
+            {
+                // اگر بدنه JSON معتبر نباشد، نتیجه را رد قطعی فرض نمی‌کنیم.
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// لاگ ثانویه نباید باعث تغییر نتیجهٔ اصلی ارسال شود.
+        /// </summary>
+        private static async Task TryLogAttemptErrorAsync(
+            OmidSubmissionStore store,
+            Guid? invoiceId,
+            string operation,
+            string endpoint,
+            Exception error,
+            string outcome,
+            string? message = null)
+        {
+            try
+            {
+                int? statusCode = error is HttpRequestException httpError &&
+                                  httpError.StatusCode.HasValue
+                    ? (int)httpError.StatusCode.Value
+                    : null;
+
+                await store.LogAttemptErrorAsync(
+                    invoiceId,
+                    operation,
+                    endpoint,
+                    statusCode,
+                    outcome,
+                    message ?? error.Message,
+                    CancellationToken.None);
+            }
+            catch (Exception logError)
+            {
+                System.Diagnostics.Trace.TraceWarning(
+                    "Omid attempt log could not be written: {0}",
+                    logError.GetType().Name);
             }
         }
 
@@ -538,6 +787,7 @@ namespace TaxWebAppCore8.BI.Omid
         public Guid InvoiceId { get; set; }
         public long Inno { get; set; }
         public string State { get; set; } = string.Empty;
+        public string? RequestId { get; set; }
         public string? TrackingId { get; set; }
         public string? Message { get; set; }
     }
