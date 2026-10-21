@@ -312,26 +312,21 @@
                         return item.InvoiceNumber || item.InvoiceId;
                     }).join("، "), data, savedMessage || message);
 
+                // سرور برای هر فاکتور وضعیت واقعی ذخیره‌شده را برمی‌گرداند؛ تکی و گروهی یکسان‌اند.
+                const savedItems = Array.isArray(data?.savedResults) ? data.savedResults : [];
                 for (const invoice of batch) {
-                    if (batch.length === 1 && savedState) {
-                        const current = invoices.find(function (item) {
-                            return item.InvoiceId === invoice.InvoiceId;
-                        });
-                        if (current) {
-                            current.State = savedState;
-                            current.LastError = savedMessage || null;
-                        }
-                    }
-                    const current = invoices.find(function (item) {
-                        return item.InvoiceId === invoice.InvoiceId;
+                    const saved = savedItems.find(function (item) {
+                        return String(item.invoiceId).toLowerCase() === String(invoice.InvoiceId).toLowerCase();
                     });
-                    if (current) {
-                        current.LastInquiryResponseJson = text;
+                    const current = invoices.find(function (item) { return item.InvoiceId === invoice.InvoiceId; });
+                    if (current && saved && !saved.stale) {
+                        current.State = saved.state;
+                        current.LastError = saved.message || null;
+                        current.LastInquiryResponseJson = saved.responseJson;
                         current.LastInquiryUtc = new Date().toISOString();
                     }
-                    inquiryNotes.set(
-                        invoice.InvoiceId,
-                        savedMessage || message);
+                    inquiryNotes.set(invoice.InvoiceId, saved?.message ||
+                        (saved?.state === "Accepted" ? "صورتحساب تأیید شد." : savedMessage || message));
                 }
 
                 if (failed)

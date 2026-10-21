@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using System.Data.SqlClient;
 using System.Threading;
@@ -634,8 +634,9 @@ WHERE InvoiceId = @InvoiceId AND State = N'Sending';";
         /// <summary>
         /// آخرین نتیجهٔ استعلام را برای نمایش در کارتابل ذخیره می‌کند.
         /// </summary>
-        public async Task SaveInquiryResultAsync(
+        public async Task<(string State, string? Message)?> SaveInquiryResultAsync(
             Guid invoiceId,
+            string expectedRequestId,
             string state,
             string? message,
             string responseJson,
@@ -649,19 +650,24 @@ WHERE InvoiceId = @InvoiceId AND State = N'Sending';";
                 throw new ArgumentException(
                     "وضعیت نتیجهٔ استعلام معتبر نیست.", nameof(state));
 
+            if (!Guid.TryParse(expectedRequestId, out Guid parsedRequestId) || parsedRequestId == Guid.Empty)
+                throw new ArgumentException("requestId استعلام معتبر نیست.", nameof(expectedRequestId));
+
             const string sql = @"
 UPDATE dbo.OmidInvoiceSubmission
-SET State = @State,
-    LastError = @LastError,
+SET State = CASE WHEN @State = N'Pending' AND State IN (N'Accepted', N'Failed') THEN State ELSE @State END,
+    LastError = CASE WHEN @State = N'Pending' AND State IN (N'Accepted', N'Failed') THEN LastError ELSE @LastError END,
     LastErrorStage = CASE
+        WHEN @State = N'Pending' AND State IN (N'Accepted', N'Failed') THEN LastErrorStage
         WHEN @State = N'Failed' AND @LastError IS NOT NULL THEN N'Inquiry'
         ELSE NULL
     END,
     LastInquiryResponseJson = @ResponseJson,
     LastInquiryUtc = SYSUTCDATETIME(),
     UpdatedUtc = SYSUTCDATETIME()
+OUTPUT inserted.State, inserted.LastError
 WHERE InvoiceId = @InvoiceId
-  AND RequestId IS NOT NULL
+  AND RequestId = @ExpectedRequestId
   AND State NOT IN (N'Prepared', N'Sending');";
 
             using var connection = new SqlConnection(_connectionString);
@@ -669,6 +675,8 @@ WHERE InvoiceId = @InvoiceId
 
             command.Parameters.Add("@InvoiceId", SqlDbType.UniqueIdentifier)
                 .Value = invoiceId;
+            command.Parameters.Add("@ExpectedRequestId", SqlDbType.NVarChar, 100)
+                .Value = expectedRequestId.Trim();
             command.Parameters.Add("@State", SqlDbType.NVarChar, 20)
                 .Value = state;
             command.Parameters.Add("@LastError", SqlDbType.NVarChar, 1000)
@@ -682,9 +690,10 @@ WHERE InvoiceId = @InvoiceId
 
             await connection.OpenAsync(cancellationToken);
 
-            if (await command.ExecuteNonQueryAsync(cancellationToken) != 1)
-                throw new InvalidOperationException(
-                    "رکورد فاکتور ارسال‌شده برای ثبت نتیجهٔ استعلام پیدا نشد.");
+            // صفر ردیف یعنی پاسخ مربوط به رسید فعلی نیست؛ از بازنویسی آن جلوگیری می‌کنیم.
+            using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            if (!await reader.ReadAsync(cancellationToken)) return null;
+            return (reader.GetString(0), reader.IsDBNull(1) ? null : reader.GetString(1));
         }
 
         /// <summary>

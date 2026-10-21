@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -9,6 +9,7 @@ namespace TaxWebAppCore8.BI.Omid
     public sealed class OmidSendResponse
     {
         public bool Success { get; set; }
+        public string ResponseJson { get; set; } = string.Empty;
         public int? StatusCode { get; set; }
         public string Message { get; set; } = string.Empty;
 
@@ -50,6 +51,14 @@ namespace TaxWebAppCore8.BI.Omid
                     ex);
             }
 
+            if (root["success"]?.Value<bool>() == false)
+                return new OmidSendResponse
+                {
+                    Success = false, ResponseJson = responseJson,
+                    Message = root["message"]?.Value<string>() ?? "امید ارسال را نپذیرفت.",
+                    StatusCode = root["statusCode"]?.Value<int?>()
+                };
+
             // بعضی نسخه‌های پاسخ، نتیجه را در data.success/data.data می‌گذارند؛
             // پاسخ جدید امید ممکن است receipt را مستقیم در data برگرداند.
             if (root["data"] is not JToken responseData ||
@@ -63,6 +72,7 @@ namespace TaxWebAppCore8.BI.Omid
 
             var result = new OmidSendResponse
             {
+                ResponseJson = responseJson,
                 Success = hasNestedResult
                     ? envelope!["success"]!.Value<bool>()
                     : root["success"]?.Value<bool>() ?? false,
@@ -129,10 +139,10 @@ namespace TaxWebAppCore8.BI.Omid
 
             // HTTP 200 کافی نیست؛ خود امید نیز باید ارسال را پذیرفته باشد.
             if (!response.Success)
-                throw new InvalidOperationException(
+                throw new OmidSendBusinessException(
                     string.IsNullOrWhiteSpace(response.Message)
                         ? "امید درخواست ارسال فاکتور را نپذیرفت."
-                        : response.Message);
+                        : response.Message, response.ResponseJson);
 
             // فعلاً هر درخواست عملیاتی فقط یک فاکتور خواهد داشت.
             // بنابراین باید دقیقاً یک رسید در پاسخ ببینیم.

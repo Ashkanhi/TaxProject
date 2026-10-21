@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -440,9 +440,9 @@ namespace TaxWebAppCore8.BI.Omid
 
                 if (response == null || !response.Success)
                 {
-                    throw new InvalidOperationException(
-                        response?.Message
-                        ?? "امید درخواست ارسال دسته‌ای را نپذیرفت.");
+                    throw new OmidSendBusinessException(
+                        response?.Message ?? "امید درخواست ارسال دسته‌ای را نپذیرفت.",
+                        response?.ResponseJson ?? string.Empty);
                 }
 
                 // ترتیب رسیدهای پاسخ ممکن است با ترتیب فاکتورهای ارسالی
@@ -630,59 +630,8 @@ namespace TaxWebAppCore8.BI.Omid
         /// فقط وقتی پاسخ واقعی با success=false و errors دریافت شده باشد،
         /// نتیجه را رد قطعی در نظر می‌گیریم؛ سایر خطاها Unknown می‌مانند.
         /// </summary>
-        private static bool TryGetDefinitiveRejection(
-            Exception exception,
-            out string rejection)
-        {
-            rejection = string.Empty;
-
-            if (exception is not HttpRequestException httpError ||
-                httpError.StatusCode == null)
-            {
-                return false;
-            }
-
-            const string responseMarker = "پاسخ سرور:";
-            int markerIndex = httpError.Message.IndexOf(
-                responseMarker,
-                StringComparison.Ordinal);
-
-            if (markerIndex < 0)
-                return false;
-
-            string responseJson = httpError.Message[
-                (markerIndex + responseMarker.Length)..].Trim();
-
-            try
-            {
-                JObject response = JObject.Parse(responseJson);
-                if (response["success"]?.Value<bool>() != false)
-                    return false;
-
-                JToken? errors = response["errors"];
-                if (errors is JArray errorArray)
-                {
-                    rejection = string.Join(
-                        " | ",
-                        errorArray.Select(item => item?.ToString())
-                            .Where(message => !string.IsNullOrWhiteSpace(message)));
-                }
-                else if (errors != null && errors.Type != JTokenType.Null)
-                {
-                    rejection = errors.ToString();
-                }
-
-                if (string.IsNullOrWhiteSpace(rejection))
-                    rejection = response["message"]?.ToString() ?? string.Empty;
-
-                return !string.IsNullOrWhiteSpace(rejection);
-            }
-            catch
-            {
-                // اگر بدنه JSON معتبر نباشد، نتیجه را رد قطعی فرض نمی‌کنیم.
-                return false;
-            }
-        }
+        private static bool TryGetDefinitiveRejection(Exception exception, out string rejection)
+            => OmidSendFailureClassifier.TryGetDefinitiveRejection(exception, out rejection);
 
         /// <summary>
         /// لاگ ثانویه نباید باعث تغییر نتیجهٔ اصلی ارسال شود.

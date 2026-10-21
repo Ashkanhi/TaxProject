@@ -1,0 +1,31 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "ورود به ابزارهای سیستم";
+    var configured = ViewData["Configured"] is true;
+}
+<section class="content" dir="rtl">
+    <div class="box box-primary" style="max-width:460px;margin:30px auto">
+        <div class="box-header with-border"><h2 class="box-title">@ViewData["ToolTitle"]</h2></div>
+        <div class="box-body">
+            <p>برای ورود به این بخش رمز ابزارهای سیستم را وارد کنید.</p>
+            @if (ViewData["Error"] is string error)
+            {
+                <div class="alert alert-danger" role="alert">@error</div>
+            }
+            @if (!configured)
+            {
+                <div class="alert alert-warning">رمز دسترسی تنظیم نشده است؛ با مدیر سامانه تماس بگیرید.</div>
+            }
+            <form asp-controller="SystemTools" asp-action="Unlock" method="post">
+                <input type="hidden" name="target" value="@ViewData["Target"]" />
+                <div class="form-group">
+                    <label for="systemToolsPassword">رمز عبور</label>
+                    <input id="systemToolsPassword" name="password" type="password" class="form-control"
+                           autocomplete="current-password" maxlength="1024" required autofocus disabled="@(!configured)" />
+                </div>
+                <button type="submit" class="btn btn-primary" disabled="@(!configured)">ورود</button>
+                <a asp-controller="SendInvoice" asp-action="Index" class="btn btn-default">بازگشت</a>
+            </form>
+        </div>
+    </div>
+</section>

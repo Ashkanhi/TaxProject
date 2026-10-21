@@ -1,0 +1,27 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "بررسی صحت ساختار";
+}
+<section id="omidSetup" class="content" dir="rtl"
+         data-check-url="@Url.Action("Check", "OmidSetup")"
+         data-create-url="@Url.Action("Create", "OmidSetup")">
+    <div class="box box-primary">
+        <div class="box-header with-border"><h2 class="box-title">بررسی صحت ساختار</h2></div>
+        <div class="box-body">
+            <p>بررسی جدول‌ها، ستون‌ها، ویوهای کارتابل و وابستگی‌های خواندن فاکتور در دیتابیس تنظیم‌شدهٔ همین سرویس.</p>
+            <p>«ایجاد» فقط موردِ موجودنبوده را می‌سازد. اختلاف ساختارِ موارد موجود باید پس از بررسی خطا اصلاح شود. جدول‌های اصلی فروش باید توسط سامانهٔ فروش نصب شوند.</p>
+            <p>برای جدول‌های برنامه نوع، طول، NULL، کلید اصلی، IDENTITY و مقدار پیش‌فرض بررسی می‌شود. برای وابستگی‌های فروش، ستون‌های مورد استفاده و قابل خواندن بودن ویو بررسی می‌شود.</p>
+            @Html.AntiForgeryToken()
+            <button id="setupRefresh" type="button" class="btn btn-primary">بررسی مجدد</button>
+            <span id="setupSummary" role="status" aria-live="polite"></span>
+            <div id="setupMessage" role="alert" style="margin-top:12px;white-space:pre-wrap"></div>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead><tr><th>وضعیت</th><th>نام / نوع</th><th>کاربرد</th><th>نتیجه بررسی</th><th>عملیات</th></tr></thead>
+                    <tbody id="setupRows"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+<script src="~/Content/MyJS/OmidSetup.js" asp-append-version="true" defer></script>

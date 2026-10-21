@@ -18,13 +18,15 @@ namespace TaxWebAppCore8.BI.Omid
             int attempts,
             bool hasFinalResult,
             bool? finalSuccess = null,
-            string? finalMessage = null)
+            string? finalMessage = null,
+            IReadOnlyDictionary<string, OmidInquiryItemResult>? items = null)
         {
             ResponseJson = responseJson;
             Attempts = attempts;
             HasFinalResult = hasFinalResult;
             FinalSuccess = finalSuccess;
             FinalMessage = finalMessage;
+            Items = items ?? new Dictionary<string, OmidInquiryItemResult>();
         }
 
         public string ResponseJson { get; }
@@ -32,6 +34,7 @@ namespace TaxWebAppCore8.BI.Omid
         public bool HasFinalResult { get; }
         public bool? FinalSuccess { get; }
         public string? FinalMessage { get; }
+        public IReadOnlyDictionary<string, OmidInquiryItemResult> Items { get; }
     }
 
     /// <summary>
@@ -215,7 +218,8 @@ namespace TaxWebAppCore8.BI.Omid
         /// </summary>
         public async Task<OmidInquiryRetryResult> InquiryWithRetryAsync(
             IReadOnlyCollection<string> requestIds,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default,
+            Func<IReadOnlyDictionary<string, OmidInquiryItemResult>, int, Task>? onAttemptCompleted = null)
         {
             const int maxAttempts = 20;
             TimeSpan retryInterval = TimeSpan.FromSeconds(30);
@@ -245,126 +249,46 @@ namespace TaxWebAppCore8.BI.Omid
                 ids.Add(id);
             }
 
-            // مثل نمونهٔ امید، برای همهٔ تلاش‌ها یک توکن می‌گیریم.
-            string token = await LoginAsync(cancellationToken);
-            var payload = new { requestIds = ids };
-            string lastResponse = string.Empty;
+            // هر شناسه باید واقعی باشد؛ trackingId جایگزین requestId نمی‌شود.
+            ids = ids.Select(id => Guid.TryParse(id, out Guid value) && value != Guid.Empty
+                ? value.ToString() : throw new InvalidOperationException("requestId استعلام معتبر نیست.")).ToList();
+            if (ids.Distinct(StringComparer.OrdinalIgnoreCase).Count() != ids.Count)
+                throw new InvalidOperationException("requestId تکراری است.");
 
+            string token = await LoginAsync(cancellationToken);
+            var collected = new Dictionary<string, OmidInquiryItemResult>(StringComparer.OrdinalIgnoreCase);
+            int attempts = 0;
             for (int attempt = 1; attempt <= maxAttempts; attempt++)
             {
-                lastResponse = await PostEncryptedAsync(
-                    "/api/Invoice/Invoiceinquiry",
-                    payload,
-                    token,
-                    cancellationToken);
+                // فاکتورهای تعیین‌تکلیف‌شده دوباره در حلقه استعلام نمی‌شوند.
+                var remaining = ids.Where(id => !collected.TryGetValue(id, out var item) || !item.IsFinal).ToArray();
+                string response = await PostEncryptedAsync(
+                    "/api/Invoice/Invoiceinquiry", new { requestIds = remaining }, token, cancellationToken);
+                var current = OmidInquiryResponseParser.Parse(response, remaining);
+                foreach (var pair in current) collected[pair.Key] = pair.Value;
+                attempts = attempt;
 
-                if (TryReadFinalInquiryResult(
-                    lastResponse,
-                    out bool? finalSuccess,
-                    out string? finalMessage))
-                {
-                    return new OmidInquiryRetryResult(
-                        lastResponse,
-                        attempt,
-                        hasFinalResult: true,
-                        finalSuccess,
-                        finalMessage);
-                }
-
-                if (attempt < maxAttempts)
-                {
-                    await Task.Delay(retryInterval, cancellationToken);
-                }
+                // نتیجهٔ هر تلاش پیش از انتظار برای تلاش بعدی ذخیره می‌شود.
+                if (onAttemptCompleted != null) await onAttemptCompleted(current, attempt);
+                if (ids.All(id => collected[id].IsFinal)) break;
+                if (attempt < maxAttempts) await Task.Delay(retryInterval, cancellationToken);
             }
 
-            return new OmidInquiryRetryResult(
-                lastResponse, maxAttempts, hasFinalResult: false);
-        }
-
-        // ساختار نتیجه را مطابق نمونهٔ ارسالی امید بررسی می‌کند.
-        private static bool TryReadFinalInquiryResult(
-            string responseJson,
-            out bool? finalSuccess,
-            out string? finalMessage)
-        {
-            finalSuccess = null;
-            finalMessage = null;
-            JObject response = JObject.Parse(responseJson);
-            if (response["success"]?.Value<bool>() != true)
-                return false;
-
-            JToken? data = response["data"];
-            if (data == null || data.Type == JTokenType.Null)
-                return false;
-
-            var results = new List<JObject>();
-            if (data is JArray items)
+            bool complete = ids.All(id => collected[id].IsFinal);
+            bool? finalSuccess = complete && collected.Values.All(item => item.State == "Accepted") ? true
+                : complete && collected.Values.All(item => item.State == "Failed") ? false : null;
+            // این JSON جمع‌بندی محلی است؛ پاسخ خام تک‌تک تلاش‌ها جداگانه در لاگ می‌ماند.
+            string summary = new JObject
             {
-                foreach (JToken item in items)
-                {
-                    if (FindInquiryResultData(item) is not JObject itemResult ||
-                        itemResult["success"]?.Type != JTokenType.Boolean)
-                    {
-                        return false;
-                    }
-
-                    results.Add(itemResult);
-                }
-            }
-            else if (FindInquiryResultData(data) is JObject itemResult &&
-                     itemResult["success"]?.Type == JTokenType.Boolean)
-            {
-                results.Add(itemResult);
-            }
-
-            if (results.Count == 0)
-                return false;
-
-            bool[] statuses = results
-                .Select(item => item["success"]!.Value<bool>())
-                .ToArray();
-
-            // فقط وقتی تمام صورتحساب‌های دسته وضعیت یکسان دارند،
-            // می‌توان یک وضعیت مشترک را به رکوردها نسبت داد.
-            if (statuses.All(value => value))
-                finalSuccess = true;
-            else if (statuses.All(value => !value))
-                finalSuccess = false;
-
-            finalMessage = string.Join(
-                " | ",
-                results.Select(GetInquiryMessage)
-                    .Where(message => !string.IsNullOrWhiteSpace(message))
-                    .Distinct());
-
-            return true;
-        }
-
-        private static JToken? FindInquiryResultData(JToken? item)
-        {
-            if (item is not JObject obj)
-                return null;
-
-            JToken? result = obj["inquiryResultModel"]?["data"];
-            result ??= obj["data"];
-
-            // برخی پاسخ‌ها خود مدل نتیجه را مستقیماً در data قرار می‌دهند.
-            if (result == null && obj["success"]?.Type == JTokenType.Boolean)
-                result = obj;
-
-            return result;
-        }
-
-        private static string? GetInquiryMessage(JObject result)
-        {
-            string? message = result["message"]?.ToString();
-            if (!string.IsNullOrWhiteSpace(message))
-                return message;
-
-            JToken? errors = result["errors"];
-            return errors == null || errors.Type == JTokenType.Null
-                ? null
-                : errors.ToString(Formatting.None);
+                ["success"] = true,
+                ["message"] = "نتایج تجمیع‌شدهٔ تلاش‌های استعلام",
+                ["aggregated"] = true,
+                ["data"] = new JArray(ids.Where(id => collected[id].Row != null)
+                    .Select(id => collected[id].Row!.DeepClone())),
+                ["statusCode"] = 200
+            }.ToString(Formatting.None);
+            return new OmidInquiryRetryResult(summary, attempts, complete, finalSuccess,
+                items: collected);
         }
 
         /// <summary>
@@ -451,11 +375,7 @@ namespace TaxWebAppCore8.BI.Omid
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new HttpRequestException(
-                        $"خطای ارتباط با امید؛ HTTP {httpStatusCode}. " +
-                        $"پاسخ سرور: {responseText}",
-                        inner: null,
-                        statusCode: response.StatusCode);
+                    throw new OmidApiException(response.StatusCode, responseText);
                 }
 
                 return responseText;

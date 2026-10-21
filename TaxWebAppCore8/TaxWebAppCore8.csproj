@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <EmbeddedResource Include="Models\DBScript\Usp_TaxCartable_DetailInfo-10.sql" LogicalName="OmidSetup.Detail.sql" />
+  </ItemGroup>
 
 	<PropertyGroup Label="Globals">
 		<SccProjectName>SAK</SccProjectName>

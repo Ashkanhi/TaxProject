@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
+using System.Threading.RateLimiting;
 using TaxServiceAndApp.BI;
 using TaxWebAppCore8.BI;
 using TaxWebAppCore8.BI.MessagingService;
@@ -10,6 +11,23 @@ using TaxWebAppCore8.Models.DBContextMedels;
 using TaxWebAppCore8.Models.SharedDTO.BaranDB;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSingleton<SystemToolsAccess>();
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = async (context, cancellationToken) =>
+        await context.HttpContext.Response.WriteAsync("تلاش‌های ورود بیش از حد مجاز است؛ یک دقیقه بعد دوباره تلاش کنید.", cancellationToken);
+    options.AddPolicy("SystemToolsLogin", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+});
 
 // تعیین مسیر فایل‌های موردنیاز سرویس‌های فعلی.
 BMain.ServerResourcesPath = Path.Combine(
@@ -117,6 +135,7 @@ app.UseStaticFiles();
 
 // تعیین مسیر درخواست قبل از اجرای احراز هویت و مجوزها.
 app.UseRouting();
+app.UseRateLimiter();
 
 // اجرای احراز هویت و بررسی مجوز دسترسی.
 app.UseAuthentication();

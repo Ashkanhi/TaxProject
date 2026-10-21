@@ -1,0 +1,42 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "گزارش پرتال مودیان باران 360";
+}
+<link rel="stylesheet" href="~/Content/OmidDashboard.css" asp-append-version="true" />
+<section id="omidDashboard" class="content" dir="rtl" data-url="@Url.Action("Summary", "OmidDashboard")">
+    <header class="dashboard-heading">
+        <div><span class="dashboard-eyebrow">نمای کلی صورتحساب‌ها</span><h1>گزارش وضعیت صورت حساب  </h1><p>آمار همهٔ فاکتورهای ثبت‌شده در سرویس امید</p></div>
+        <button type="button" id="dashboardRefresh" class="btn btn-primary"><i class="fa fa-refresh" aria-hidden="true"></i> به‌روزرسانی آمار</button>
+    </header>
+    <div id="dashboardError" class="alert alert-danger" role="alert" hidden></div>
+    <div class="dashboard-metrics" aria-label="تعداد فاکتورها">
+        <article class="dashboard-metric metric-sent"><i class="fa fa-paper-plane-o" aria-hidden="true"></i><h2>ارسال‌شده سالم</h2><strong data-value="SentSuccessfully">—</strong><p>دارای شناسهٔ پیگیری امید</p></article>
+        <article class="dashboard-metric metric-inquiry-error"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i><h2>خطای استعلام</h2><strong data-value="InquiryErrors">—</strong><p>رد در استعلام یا آخرین خطای ارتباط استعلام</p></article>
+        <article class="dashboard-metric metric-accepted"><i class="fa fa-check-circle-o" aria-hidden="true"></i><h2>استعلام موفق</h2><strong data-value="InquirySucceeded">—</strong><p>نتیجهٔ نهایی تأییدشده</p></article>
+        <article class="dashboard-metric metric-omid-error"><i class="fa fa-times-circle-o" aria-hidden="true"></i><h2>خطای امید</h2><strong data-value="OmidErrors">—</strong><p>رد ارسال یا نتیجهٔ نامشخص در مرحلهٔ ارسال</p></article>
+    </div>
+    <p id="dashboardStatus" role="status" aria-live="polite">در حال دریافت آمار…</p>
+    <div class="dashboard-charts">
+    <section class="dashboard-chart" aria-labelledby="dashboardChartTitle">
+        <div class="dashboard-chart-heading"><h2 id="dashboardChartTitle">مقایسهٔ تعداد فاکتورها</h2><span>واحد: فاکتور</span></div>
+        <div id="dashboardBars" hidden>
+            <div class="dashboard-bar-row metric-sent"><span>ارسال‌شده سالم</span><div class="dashboard-track"><div class="dashboard-bar" data-bar="SentSuccessfully"></div></div><strong data-value="SentSuccessfully">—</strong></div>
+            <div class="dashboard-bar-row metric-inquiry-error"><span>خطای استعلام</span><div class="dashboard-track"><div class="dashboard-bar" data-bar="InquiryErrors"></div></div><strong data-value="InquiryErrors">—</strong></div>
+            <div class="dashboard-bar-row metric-accepted"><span>استعلام موفق</span><div class="dashboard-track"><div class="dashboard-bar" data-bar="InquirySucceeded"></div></div><strong data-value="InquirySucceeded">—</strong></div>
+            <div class="dashboard-bar-row metric-omid-error"><span>خطای امید</span><div class="dashboard-track"><div class="dashboard-bar" data-bar="OmidErrors"></div></div><strong data-value="OmidErrors">—</strong></div>
+        </div>
+        <p class="dashboard-note">آمار براساس آخرین اطلاعات ذخیره‌شده است. فاکتورِ دارای استعلام موفق یا خطای استعلام می‌تواند در تعداد ارسال سالم هم باشد؛ جمع این چهار عدد، تعداد کل فاکتورها نیست. برای دریافت وضعیت جدید از امید، از پنل استعلام استفاده کنید.</p>
+    </section>
+    <section class="dashboard-chart" aria-labelledby="dashboardPieTitle">
+        <div class="dashboard-chart-heading"><h2 id="dashboardPieTitle">سهم وضعیت فعلی فاکتورها</h2></div>
+        <div id="dashboardPieContent" hidden>
+            <div id="dashboardPie" class="dashboard-donut" role="img" aria-label="توزیع وضعیت فاکتورها؛ جزئیات در راهنمای زیر">
+                <div class="dashboard-donut-center"><strong id="dashboardPieTotal">—</strong><span>کل فاکتورها</span></div>
+            </div>
+            <ul id="dashboardPieLegend" class="dashboard-pie-legend" aria-label="تعداد و درصد هر وضعیت"></ul>
+        </div>
+        <p class="dashboard-note">هر فاکتور فقط یک‌بار شمرده می‌شود. تأیید نهایی بر خطای ارتباط بعدی اولویت دارد. ارسال سالمِ بدون نتیجهٔ نهایی در «در انتظار استعلام» و موارد آماده‌سازی یا نامشخص در «سایر وضعیت‌ها» قرار می‌گیرند.</p>
+    </section>
+    </div>
+</section>
+<script src="~/Content/MyJS/OmidDashboard.js" asp-append-version="true" defer></script>
