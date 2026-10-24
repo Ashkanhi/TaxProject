@@ -60,9 +60,16 @@ builder.Services.Configure<SmtpSettings>(
 
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 
-// خواندن بخش Omid از تنظیمات و اتصال آن به کلاس OmidConfig.
-builder.Services.Configure<OmidConfig>(
-    builder.Configuration.GetSection(OmidConfig.SectionName));
+// ارسال، استعلام و تست ارتباط امید همگی از تنظیمات همین مشتری استفاده می‌کنند.
+builder.Services.AddCustomerOmidConfiguration(BMain.SrvInfo);
+
+// A separate client tests the unsaved form without changing the active invoice client.
+builder.Services.AddHttpClient(OmidSettingsConnectionTest.ClientName)
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+    {
+        UseProxy = false,
+        AllowAutoRedirect = false
+    });
 
 // درخواست‌های امید را بدون پروکسیِ سیستم ارسال می‌کنیم.
 // این تنظیم فقط روی OmidApiClient اثر دارد.

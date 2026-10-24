@@ -79,7 +79,7 @@ namespace TaxServiceAndApp.BI
         public BMain()
         {
             SrvInfo = ClsTools.ClsTools.DeSerializeObject<DTOServerInfo>(
-                ServerResourcesPath + "/CustomerID/CustomerInformation.xml");
+                TaxWebAppCore8.BI.CustomerSettingsStore.EffectivePath(ServerResourcesPath));
 
             var databaseType = SrvInfo.DataBaseType ?? "baran";
 

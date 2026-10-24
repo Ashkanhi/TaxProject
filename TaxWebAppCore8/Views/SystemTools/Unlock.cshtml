@@ -3,29 +3,41 @@
     ViewData["Title"] = "ورود به ابزارهای سیستم";
     var configured = ViewData["Configured"] is true;
 }
-<section class="content" dir="rtl">
-    <div class="box box-primary" style="max-width:460px;margin:30px auto">
-        <div class="box-header with-border"><h2 class="box-title">@ViewData["ToolTitle"]</h2></div>
-        <div class="box-body">
-            <p>برای ورود به این بخش رمز ابزارهای سیستم را وارد کنید.</p>
+<link rel="stylesheet" href="~/Content/SystemToolsAccess.css" asp-append-version="true" />
+<section id="systemToolsAccess" dir="rtl" aria-labelledby="accessTitle">
+    <div class="access-card">
+        <div class="access-body">
+            <div class="access-brand">پرتال مودیان باران <bdi>360</bdi></div>
+            <div class="access-lock" aria-hidden="true"><i class="fa fa-lock"></i></div>
+            <div class="access-eyebrow">ابزارهای سیستم</div>
+            <h1 id="accessTitle">@ViewData["ToolTitle"]</h1>
+            <p class="access-description">برای دسترسی به این بخش، رمز عبور خود را وارد کنید.</p>
             @if (ViewData["Error"] is string error)
             {
-                <div class="alert alert-danger" role="alert">@error</div>
+                <div id="accessError" class="alert alert-danger" role="alert">@error</div>
             }
             @if (!configured)
             {
                 <div class="alert alert-warning">رمز دسترسی تنظیم نشده است؛ با مدیر سامانه تماس بگیرید.</div>
             }
-            <form asp-controller="SystemTools" asp-action="Unlock" method="post">
+            <form asp-controller="SystemTools" asp-action="Unlock" method="post" id="accessForm">
                 <input type="hidden" name="target" value="@ViewData["Target"]" />
                 <div class="form-group">
                     <label for="systemToolsPassword">رمز عبور</label>
-                    <input id="systemToolsPassword" name="password" type="password" class="form-control"
-                           autocomplete="current-password" maxlength="1024" required autofocus disabled="@(!configured)" />
+                    <div class="access-input-wrap">
+                        <i class="fa fa-key access-key" aria-hidden="true"></i>
+                        <input id="systemToolsPassword" name="password" type="password"
+                               autocomplete="current-password" maxlength="1024" required autofocus disabled="@(!configured)"
+                               placeholder="رمز عبور را وارد کنید" aria-invalid="@(ViewData["Error"] != null ? "true" : "false")" />
+                        <button id="accessToggle" type="button" aria-label="نمایش رمز عبور" aria-pressed="false" aria-controls="systemToolsPassword" disabled="@(!configured)"><i class="fa fa-eye" aria-hidden="true"></i></button>
+                    </div>
+                    <p id="accessCapsLock" role="status" hidden>کلید Caps Lock روشن است.</p>
                 </div>
-                <button type="submit" class="btn btn-primary" disabled="@(!configured)">ورود</button>
-                <a asp-controller="SendInvoice" asp-action="Index" class="btn btn-default">بازگشت</a>
+                <button id="accessSubmit" type="submit" class="access-submit" disabled="@(!configured)"><span>ورود به @ViewData["ToolTitle"]</span><i class="fa fa-arrow-left" aria-hidden="true"></i></button>
+                <a asp-controller="SendInvoice" asp-action="Index" class="access-back"><i class="fa fa-angle-right" aria-hidden="true"></i> بازگشت به پنل صورتحساب‌ها</a>
             </form>
         </div>
+        <div class="access-footer"><i class="fa fa-shield" aria-hidden="true"></i> دسترسی ویژهٔ ابزارهای سیستم</div>
     </div>
 </section>
+<script src="~/Content/MyJS/SystemToolsAccess.js" asp-append-version="true" defer></script>

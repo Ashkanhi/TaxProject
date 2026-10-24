@@ -12,6 +12,8 @@ static void Check(bool value, string message)
 
 var config = new ConfigurationBuilder().AddInMemoryCollection().Build();
 var access = new SystemToolsAccess(config);
+CustomerSettingsChecks.Run();
+Check(SystemToolsAccess.ValidTarget("customer") && SystemToolsAccess.ControllerFor("customer") == "CustomerSettings", "Customer settings routing");
 var session = new TestSession();
 Check(!access.Verify("") && !access.HasAccess(session, "setup"), "Empty configuration fails closed");
 config["SystemTools:Password"] = "Test-only-Pass_123!";
@@ -38,6 +40,18 @@ AuthorizationFilterContext Context(string action, string method = "GET")
     route.Values["action"] = action;
     return new(new ActionContext(http, route, new ActionDescriptor()), new List<IFilterMetadata>());
 }
+var customerFilter = new SystemToolsPasswordFilter(access, "customer");
+var customerPage = Context("Index");
+customerFilter.OnAuthorization(customerPage);
+Check(customerPage.Result is RedirectToActionResult, "Customer page requires password");
+var customerPost = Context("Index", "POST");
+customerFilter.OnAuthorization(customerPost);
+Check(customerPost.Result is JsonResult { StatusCode: 401 }, "Customer save requires password");
+access.Grant(session, "customer");
+var authorizedCustomer = Context("Index", "POST");
+customerFilter.OnAuthorization(authorizedCustomer);
+Check(authorizedCustomer.Result == null && !access.HasAccess(session, "setup"), "Customer access is scoped");
+access.Revoke(session, "customer");
 var filter = new SystemToolsPasswordFilter(access, "setup");
 var page = Context("Index");
 filter.OnAuthorization(page);

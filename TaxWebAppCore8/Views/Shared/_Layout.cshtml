@@ -421,7 +421,7 @@
                             </a>
                         </li>
                         <li id="menu-system-logs">
-                            <a asp-controller="SystemLogs" asp-action="Index">
+                            <a asp-controller="SystemTools" asp-action="Unlock" asp-route-target="logs">
                                 <i class="fa fa-file-text-o"></i>
                                 <span>لاگ‌های سیستم</span>
                             </a>
@@ -452,6 +452,7 @@
                             </ul>
                         </li>
 
+                        <li class="header">ابزارهای سیستم</li>
                         @* برای سرویس‌های دیگر، لاگ فقط از خود سرور در منو دیده شود. *@
                         @if (Context.Connection.RemoteIpAddress is { } remoteIp &&
                         System.Net.IPAddress.IsLoopback(remoteIp))
@@ -465,6 +466,12 @@
                         }
                     }
 
+                    <li id="menu-customer-settings">
+                        <a asp-controller="SystemTools" asp-action="Unlock" asp-route-target="customer">
+                            <i class="fa fa-sliders" aria-hidden="true"></i>
+                            <span>تنظیمات ارسال</span>
+                        </a>
+                    </li>
                 </ul>
             </section>
         </aside>
@@ -474,7 +481,7 @@
         </div>
         <footer class="main-footer text-left">
             <strong>&copy; 2019-2025 <a href="https://arghamnegargroup.com/">Argham Negar Group</a></strong>
-            <span class="footer-version" aria-label="نسخهٔ نرم‌افزار">Version 2.0.0.7</span>
+            <span class="footer-version" aria-label="نسخهٔ نرم‌افزار">Version 3.0.0.1</span>
         </footer>
 
         <aside class="control-sidebar control-sidebar-dark">

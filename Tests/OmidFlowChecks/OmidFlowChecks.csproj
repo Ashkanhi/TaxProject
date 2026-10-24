@@ -17,5 +17,9 @@
     <Compile Include="../../TaxWebAppCore8/BI/Omid/OmidSendInvoiceRequest.cs" Link="Source/OmidSendInvoiceRequest.cs" />
     <Compile Include="../../TaxWebAppCore8/BI/Omid/OmidCryptoHelper.cs" Link="Source/OmidCryptoHelper.cs" />
     <Compile Include="../../TaxWebAppCore8/BI/Omid/OmidConfig.cs" Link="Source/OmidConfig.cs" />
+    <Compile Include="../../TaxWebAppCore8/BI/Omid/OmidCustomerConfiguration.cs" Link="Source/OmidCustomerConfiguration.cs" />
+    <Compile Include="../../TaxWebAppCore8/BI/Omid/OmidSettingsConnectionTest.cs" Link="Source/OmidSettingsConnectionTest.cs" />
+    <Compile Include="../../TaxWebAppCore8/BI/CustomerSettingsStore.cs" Link="Source/CustomerSettingsStore.cs" />
+    <Compile Include="../../TaxWebAppCore8/Models/SharedDTO/DTOServerInfo.cs" Link="Source/DTOServerInfo.cs" />
   </ItemGroup>
 </Project>

@@ -86,9 +86,7 @@
                         </select>
                     </div>
                     <div class="col-md-3 col-sm-12 form-group">
-                        <label for="cmbStores">فروشگاه</label>
-                        <select id="cmbStores" multiple class="form-control custom-select"
-                                aria-label="فروشگاه‌ها"></select>
+                        <partial name="_OmidStoreFilter" />
                     </div>
                 </div>
                 <div class="form-group" id="butensDiv" style="float:right">
@@ -116,7 +114,7 @@
         </div></div>
 
         <div class="x_panel"><div class="panel-body"><div class="x_content">
-            <p style="text-align:center;color:red">لیست فاکتورهای ارسال‌شده به امید</p>
+            <div class="omid-table-toolbar"><h2><i class="fa fa-list-alt" aria-hidden="true"></i> صورتحساب‌های قابل استعلام</h2></div>
             <div class="table-responsive">
                 <table id="tblInquiry"
                        class="table table-striped table-bordered table-sm jambo_table dt-responsive"
@@ -148,5 +146,6 @@
 </div>
 
 @section js_UAGManagment {
+    <script src="~/Content/MyJS/OmidStoreFilter.js" asp-append-version="true"></script>
     <script src="~/Content/MyJS/OmidInquiry.js" asp-append-version="true"></script>
 }

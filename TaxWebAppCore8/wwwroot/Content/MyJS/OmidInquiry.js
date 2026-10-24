@@ -180,6 +180,7 @@
                 option.textContent = store.Name || String(store.StoreID);
                 storesFilter.appendChild(option);
             }
+            OmidStoreFilter.init(storesFilter);
         } catch (error) {
             console.error("خواندن فروشگاه‌های امید ناموفق بود.", error);
         }
@@ -406,7 +407,7 @@
     exportButton.addEventListener("click", exportForExcel);
     checkButton.addEventListener("click", checkConnection);
     stateFilter.addEventListener("change", applyLocalFilters);
-    storesFilter.addEventListener("change", applyLocalFilters);
+    $(storesFilter).on("change.omidInquiry", applyLocalFilters);
 
     loadStores();
 })();

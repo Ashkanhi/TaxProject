@@ -1,0 +1,110 @@
+@model TaxWebAppCore8.BI.CustomerSettingsForm
+@using TaxWebAppCore8.BI
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "تنظیمات ارسال";
+    var service = Model.Values.GetValueOrDefault("ServiceType", "");
+}
+<link rel="stylesheet" href="~/Content/CustomerSettings.css" asp-append-version="true" />
+<section class="customer-settings" dir="rtl">
+    <header class="settings-heading">
+        <div class="settings-icon"><i class="fa fa-sliders" aria-hidden="true"></i></div>
+        <div><span>ابزارهای سیستم</span><h1>تنظیمات ارسال</h1><p>سرویس ارسال و اطلاعات اتصال را مدیریت کنید.</p></div>
+    </header>
+    @if (TempData["CustomerSettingsSaved"] is string saved)
+    {
+        <div class="alert alert-success" role="status">@saved</div>
+    }
+    <div asp-validation-summary="All" class="settings-errors" role="alert"></div>
+    @if (ViewData["Unavailable"] is not true)
+    {
+        <form id="customerSettingsForm" asp-controller="CustomerSettings" asp-action="Index" method="post" autocomplete="off" data-test-url="@Url.Action("TestDatabase", "CustomerSettings")" data-omid-test-url="@Url.Action("TestOmid", "CustomerSettings")">
+            <input type="hidden" name="Version" value="@Model.Version" />
+            <div class="settings-service-picker">
+                <div><label for="setting-ServiceType">سرویس ارسال صورتحساب</label><p>با انتخاب هر سرویس، اطلاعات مربوط به آن نمایش داده می‌شود.</p></div>
+                <select id="setting-ServiceType" name="Values[ServiceType]" required>
+                    <option value="">انتخاب نوع ارسال</option>
+                    @foreach (var item in CustomerSettingsStore.Services)
+                    {
+                        <option value="@item.Key" selected="@(service == item.Key)">@item.Value</option>
+                    }
+                </select>
+            </div>
+            <div class="settings-tabs" role="tablist" aria-label="بخش‌های تنظیمات">
+                <button id="sendingTab" type="button" role="tab" aria-selected="true" aria-controls="sendingPanel" data-settings-tab="sendingPanel"><i class="fa fa-paper-plane-o" aria-hidden="true"></i> اطلاعات ارسال</button>
+                <button id="databaseTab" type="button" role="tab" aria-selected="false" aria-controls="databasePanel" tabindex="-1" data-settings-tab="databasePanel"><i class="fa fa-database" aria-hidden="true"></i> تنظیمات دیتابیس</button>
+            </div>
+            <div class="settings-notice"><i class="fa fa-info-circle" aria-hidden="true"></i> تغییرات پس از ذخیره و راه‌اندازی مجدد برنامه اعمال می‌شوند.</div>
+            @foreach (var database in new[] { false, true })
+            {
+                <div id="@(database ? "databasePanel" : "sendingPanel")" role="tabpanel" aria-labelledby="@(database ? "databaseTab" : "sendingTab")" hidden="@database">
+                    @foreach (var group in CustomerSettingsStore.Fields.Where(f => f.Key != "ServiceType" && (f.Group == "اتصال دیتابیس") == database).GroupBy(f => f.Group))
+                    {
+                        var visible = group.Any(f => f.AppliesTo(service));
+                        <fieldset class="settings-card" data-settings-group hidden="@(!visible)">
+                            <legend>@group.Key</legend>
+                            <div class="settings-grid">
+                                @foreach (var field in group)
+                                {
+                                    var value = Model.Values.GetValueOrDefault(field.Key, "");
+                                    <div class="settings-field" data-services="@field.Services" hidden="@(!field.AppliesTo(service))">
+                                        <label for="setting-@field.Key" data-field-label="@field.Key">@field.Label</label>
+                                        <div class="@(field.Secret ? "settings-secret" : "settings-input")">
+                                            <input id="setting-@field.Key" name="Values[@field.Key]"
+                                                   type="@(field.Secret ? "password" : field.Key is "StoreId" or "ConnectionTimeOut" ? "number" : "text")"
+                                                   value="@value" maxlength="4096" disabled="@(!field.AppliesTo(service))"
+                                                   dir="@(field.Key == "CustomerName" ? "rtl" : "ltr")"
+                                                   autocomplete="@(field.Secret ? "new-password" : "off")"
+                                                   aria-describedby="hint-@field.Key" />
+                                            @if (field.Secret)
+                                            {
+                                                <button type="button" class="settings-reveal" data-reveal="setting-@field.Key" aria-label="نمایش @field.Label" aria-pressed="false"><i class="fa fa-eye" aria-hidden="true"></i></button>
+                                            }
+                                        </div>
+                                        <small id="hint-@field.Key">
+                                            @if (field.Secret)
+                                            {
+                                                <span>برای دیدن مقدار، روی چشم بزنید؛ خالی = حفظ مقدار ذخیره‌شده</span>
+                                            }
+                                            else if (field.Key == "TokenType")
+                                            {
+                                                <span>برای گواهی فایل: CertificateFile؛ مقدار توکن را مطابق تنظیمات سرویس وارد کنید.</span>
+                                            }
+                                            else
+                                            {
+                                                <bdi>@field.Key</bdi>
+                                            }
+                                        </small>
+                                    </div>
+                                }
+                            </div>
+                        </fieldset>
+                    }
+                    @if (database)
+                    {
+                        <div class="settings-test">
+                            <div><strong>بررسی اتصال به دیتابیس</strong><p>تست با مقادیر همین فرم و بدون ذخیرهٔ تغییرات انجام می‌شود.</p></div>
+                            <button id="testDatabase" type="button" class="btn btn-default"><i class="fa fa-plug" aria-hidden="true"></i> تست اتصال</button>
+                            <div id="databaseTestResult" role="status" aria-live="polite" hidden></div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div id="omidConnectionTest" class="settings-test" hidden="@(service != "Omid")">
+                            <div><strong>بررسی ارتباط و ورود به امید</strong><p>با کلیدها و اطلاعات فعلی همین فرم، بدون نیاز به ذخیره و بدون ارسال فاکتور، ورود آزمایش می‌شود.</p></div>
+                            <button id="testOmid" type="button" class="btn btn-default"><i class="fa fa-plug" aria-hidden="true"></i> تست ارتباط امید</button>
+                            <div id="omidTestResult" role="status" aria-live="polite" hidden></div>
+                        </div>
+                    }
+                </div>
+            }
+            <footer class="settings-actions">
+                <div><strong>ذخیره تنظیمات ارسال</strong><span>پس از ذخیره، برنامه را راه‌اندازی مجدد کنید.</span></div>
+                <button class="btn btn-primary" type="submit"><i class="fa fa-save" aria-hidden="true"></i> ذخیره تغییرات</button>
+            </footer>
+        </form>
+    }
+</section>
+@section js_UAGManagment {
+    <script src="~/Content/MyJS/CustomerSettings.js" asp-append-version="true"></script>
+}

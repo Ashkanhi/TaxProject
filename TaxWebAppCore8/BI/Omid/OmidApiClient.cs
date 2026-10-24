@@ -54,8 +54,11 @@ namespace TaxWebAppCore8.BI.Omid
             _httpClient = httpClient;
             _config = options.Value;
 
-            // آدرس پایه برای تمام درخواست‌ها استفاده می‌شود.
-            _httpClient.BaseAddress = new Uri(_config.BaseUrl);
+            // آدرس همه درخواست‌ها از CustomerInformation همان مشتری گرفته می‌شود.
+            if (!Uri.TryCreate(_config.BaseUrl, UriKind.Absolute, out var baseUri) ||
+                (baseUri.Scheme != Uri.UriSchemeHttps && baseUri.Scheme != Uri.UriSchemeHttp))
+                throw new InvalidOperationException("آدرس سرویس امید در تنظیمات ارسال معتبر نیست.");
+            _httpClient.BaseAddress = baseUri;
         }
 
         /// <summary>

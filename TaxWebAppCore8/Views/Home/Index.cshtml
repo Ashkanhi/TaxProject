@@ -349,6 +349,12 @@
                             </div>
                         </div>
                         <div class="col-md-3 col-sm-4 col-xs-12 form-group">
+                            @if (isOmidService)
+                            {
+                                <partial name="_OmidStoreFilter" />
+                            }
+                            else
+                            {
                             <label class="control-label col-md-3 col-sm-12 col-xs-12 col-lg-3 col-xl-3" for="cmbStores">
                                 فروشگاه
                             </label>
@@ -358,6 +364,7 @@
                                 </select>
 
                             </div>
+                            }
                         </div>
                     </div>
                 </form>
@@ -415,7 +422,20 @@
                  style="">
                 <div class="col-md-12" style="">
                     <div class="x_content">
-                        <p style="text-align:center;color:black"> لیست فاکتورهای</p>
+                        @if (isOmidService)
+                        {
+                            <div class="omid-table-toolbar">
+                                <h2><i class="fa fa-list-alt" aria-hidden="true"></i> صورتحساب‌ها</h2>
+                                <div class="omid-table-search">
+                                    <label for="omidInvoiceSearch">جستجو در نتایج</label>
+                                    <div><i class="fa fa-search" aria-hidden="true"></i><input id="omidInvoiceSearch" type="search" placeholder="شماره فاکتور، مشتری یا شعبه…" /></div>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <p style="text-align:center;color:black"> لیست فاکتورهای</p>
+                        }
                         <div class="table-responsive">
                             <table id="tblDoNotSend" class="table table-striped table-bordered table-sm jambo_table  dt-responsive " style="width: 100%">
 
@@ -466,6 +486,7 @@
        "Omid",
        System.StringComparison.OrdinalIgnoreCase))
     {
+        <script src="~/Content/MyJS/OmidStoreFilter.js" asp-append-version="true"></script>
         <script src="~/Content/MyJS/OmidSendInvoice.js" asp-append-version="true"></script>
     }
     else

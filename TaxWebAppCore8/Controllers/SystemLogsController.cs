@@ -12,6 +12,7 @@ using TaxWebAppCore8.Models;
 namespace TaxWebAppCore8.Controllers
 {
     [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    [TaxWebAppCore8.BI.SystemToolsPassword("logs")]
     public class SystemLogsController : Controller
     {
         private static readonly Regex EntryStart = new(
@@ -21,7 +22,7 @@ namespace TaxWebAppCore8.Controllers
         public IActionResult Index(string? fileName)
         {
             // لاگ‌ها ممکن است اطلاعات فاکتورها و خطاهای داخلی داشته باشند.
-            // درخواست رمز موقتاً غیرفعال است؛ محدودیت دسترسی از همین کامپیوتر حفظ می‌شود.
+            // رمز ابزارهای سیستم و محدودیت دسترسی از همین کامپیوتر بررسی می‌شوند.
             IPAddress? remoteIp = HttpContext.Connection.RemoteIpAddress;
             if (remoteIp == null || !IPAddress.IsLoopback(remoteIp))
                 return StatusCode(403);

@@ -10,6 +10,14 @@
     <Using Include="Microsoft.AspNetCore.Http" />
     <Using Include="Microsoft.Extensions.Configuration" />
     <Compile Include="../../TaxWebAppCore8/BI/SystemToolsAccess.cs" Link="SystemToolsAccess.cs" />
+    <Compile Include="../../TaxWebAppCore8/BI/CustomerSettingsStore.cs" Link="CustomerSettingsStore.cs" />
+    <Compile Include="../../TaxWebAppCore8/BI/SettingsDatabaseConnection.cs" Link="SettingsDatabaseConnection.cs" />
+    <Compile Include="../../TaxWebAppCore8/Models/SharedDTO/DTOServerInfo.cs" Link="DTOServerInfo.cs" />
     <Compile Include="../../TaxWebAppCore8/Controllers/SystemToolsController.cs" Link="SystemToolsController.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System.Data.SqlClient">
+      <HintPath>../../TaxWebAppCore8/bin/Debug/net8.0/runtimes/win/lib/netcoreapp2.1/System.Data.SqlClient.dll</HintPath>
+    </Reference>
   </ItemGroup>
 </Project>

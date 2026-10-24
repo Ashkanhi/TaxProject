@@ -51,12 +51,8 @@ Check(!OmidSendFailureClassifier.TryGetDefinitiveRejection(new OmidSendBusinessE
     "duplicate invoice number requires reconciliation");
 
 // کل شبکه ساختگی است؛ رمزنگاری و بدنهٔ کلاینت واقعی را بررسی می‌کنیم.
-var config = new OmidConfig
-{
-    BaseUrl = "https://unit-test.invalid", UserName = "test", Password = "test",
-    ApiKey = "test", ApiSecret = "test",
-    AesKeyBase64 = Convert.ToBase64String(new byte[32]), AesIvBase64 = Convert.ToBase64String(new byte[16])
-};
+var config = CustomerConfigurationChecks.Run();
+await SettingsConnectionChecks.RunAsync(config);
 var handler = new FakeOmidHandler(config, new[] { Envelope(Row(a, "ACCEPTED", true)), Envelope(Row(b, "REJECTED")) });
 var client = new OmidApiClient(new HttpClient(handler), Options.Create(config));
 var savedAttempts = new List<Dictionary<string, OmidInquiryItemResult>>();
@@ -75,7 +71,7 @@ Check(result.HasFinalResult && result.Attempts == 2 && result.Items[a].State == 
     "both results retained across attempts");
 Check(JObject.Parse(result.ResponseJson)["data"]!.Count() == 2 && result.FinalSuccess == null,
     "mixed final statuses are not presented as one shared status");
-Check(OmidApiTraceLogger.Count == 3, "every HTTP attempt invokes trace logging");
+Check(OmidApiTraceLogger.Count == 4, "every HTTP attempt invokes trace logging");
 
 using var cts = new CancellationTokenSource();
 var cancelHandler = new FakeOmidHandler(config, new[] { "{\"success\":true,\"data\":null}" });
@@ -96,9 +92,24 @@ sealed class FakeOmidHandler(OmidConfig config, IEnumerable<string> responses) :
     public List<string[]> Requests { get; } = new();
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
     {
+        if (request.RequestUri!.Host != new Uri(config.BaseUrl).Host || request.Headers.GetValues("X-Api-Key").Single() != config.ApiKey)
+            throw new Exception("Customer URL or API key not used");
+        var body = await request.Content!.ReadAsStringAsync(ct);
+        var signature = OmidCryptoHelper.GenerateSignature(config.ApiSecret, body,
+            request.Headers.GetValues("X-Timestamp").Single(), request.Headers.GetValues("X-Nonce").Single());
+        if (request.Headers.GetValues("X-Signature").Single() != signature) throw new Exception("Customer signing secret not used");
+        var wirePayload = JObject.Parse(body);
+        using var customerAes = Aes.Create();
+        customerAes.Key = Convert.FromBase64String(config.AesKeyBase64);
+        customerAes.IV = Convert.FromBase64String(config.AesIvBase64);
+        using var customerDecryptor = customerAes.CreateDecryptor();
+        var ciphertext = Convert.FromBase64String(wirePayload["data"]!.Value<string>()!);
+        var customerPayload = JObject.Parse(Encoding.UTF8.GetString(customerDecryptor.TransformFinalBlock(ciphertext, 0, ciphertext.Length)));
         string response;
         if (request.RequestUri!.AbsolutePath == "/api/Auth/login")
         {
+            if (customerPayload["username"]?.Value<string>() != config.UserName || customerPayload["password"]?.Value<string>() != config.Password)
+                throw new Exception("Customer login credentials not used");
             LoginCount++;
             response = "{\"success\":true,\"data\":{\"token\":\"fake-token\"}}";
         }

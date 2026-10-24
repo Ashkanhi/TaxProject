@@ -479,26 +479,7 @@ function GetStores() {
                 $select.append($("<option />").val(this.StoreID).text(this.Name));
             });
 
-            // Destroy previous instance if exists
-            if ($select.hasClass("select2-hidden-accessible")) {
-                $select.select2("destroy");
-            }
-
-            // فعال‌سازی Select2 با قابلیت چندتایی
-            $select.select2({
-                placeholder: "انتخاب فروشگاه‌ها",
-                allowClear: true,
-                width: '100%',
-                closeOnSelect: false, // برای تیک‌زنی پیاپی بدون بسته شدن
-                language: {
-                    noResults: function () {
-                        return "یافت نشد";
-                    },
-                    searching: function () {
-                        return "در حال جستجو...";
-                    }
-                }
-            });
+            OmidStoreFilter.init($select[0]);
         }
     });
     $('#cmbStores').on('change', function (e) {
@@ -762,6 +743,13 @@ function InitialInqTables() {
 }
 function InitialTabels() {
     tblDoNotSend = $("#tblDoNotSend").DataTable({
+        dom: 'lrtip',
+        initComplete: function () {
+            var table = this.api();
+            $('#omidInvoiceSearch').off('input.omidSearch').on('input.omidSearch', function () {
+                table.search(this.value).draw();
+            });
+        },
         paging: true,
         lengthChange: true,
         language: tablePersianPacketlang,
