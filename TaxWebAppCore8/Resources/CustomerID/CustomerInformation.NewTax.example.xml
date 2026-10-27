@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Reference only. Merge these fields into your existing customer configuration; keep database and license fields. -->
+<DTOServerInfo>
+  <ServiceType>NewTax</ServiceType>
+  <NEWTAX_API_URL>https://tp.tax.gov.ir/req/api/</NEWTAX_API_URL>
+  <NEWTAX_PRIVATE_KEY_PATH>C:\TaxKeys\private.pem</NEWTAX_PRIVATE_KEY_PATH>
+  <MEMORY_ID>REPLACE_WITH_MEMORY_ID</MEMORY_ID>
+  <TINS>REPLACE_WITH_SELLER_ECONOMIC_CODE</TINS>
+</DTOServerInfo>

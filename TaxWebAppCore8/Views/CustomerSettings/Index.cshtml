@@ -1,7 +1,7 @@
 @model TaxWebAppCore8.BI.CustomerSettingsForm
 @using TaxWebAppCore8.BI
 @{
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    Layout = TaxWebAppCore8.Controllers.NewTaxController.IsNewTax ? "~/Views/Shared/_NewTaxLayout.cshtml" : "~/Views/Shared/_Layout.cshtml";
     ViewData["Title"] = "تنظیمات ارسال";
     var service = Model.Values.GetValueOrDefault("ServiceType", "");
 }
@@ -69,6 +69,14 @@
                                             else if (field.Key == "TokenType")
                                             {
                                                 <span>برای گواهی فایل: CertificateFile؛ مقدار توکن را مطابق تنظیمات سرویس وارد کنید.</span>
+                                            }
+                                            else if (field.Key == "NEWTAX_PRIVATE_KEY_PATH")
+                                            {
+                                                <span>فایل PEM با سرآیند BEGIN PRIVATE KEY؛ کلید عمومی متناظر باید در کارپوشه ثبت شده باشد. فایل گواهی لازم نیست.</span>
+                                            }
+                                            else if (field.Key == "NEWTAX_API_URL")
+                                            {
+                                                <span dir="ltr">https://tp.tax.gov.ir/req/api/</span>
                                             }
                                             else
                                             {

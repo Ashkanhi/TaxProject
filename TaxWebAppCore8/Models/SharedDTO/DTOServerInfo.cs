@@ -23,6 +23,8 @@ namespace TaxServiceAndApp.Models.SharedDTO
 
 
         [DataMember] public string API_URL { get; set; }
+        [DataMember] public string NEWTAX_API_URL { get; set; }
+        [DataMember] public string NEWTAX_PRIVATE_KEY_PATH { get; set; }
         [DataMember] public string OMID_API_URL { get; set; }
         [DataMember] public string OMID_API_KEY { get; set; }
         [DataMember] public string OMID_API_SECRET { get; set; }

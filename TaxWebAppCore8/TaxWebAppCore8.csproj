@@ -10218,6 +10218,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\ClsTools\ClsTools.csproj" />
+		<ProjectReference Include="..\NewTaxSdk\NewTaxSdk.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

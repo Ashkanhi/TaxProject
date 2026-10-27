@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>@(string.Equals(TaxServiceAndApp.BI.BMain.SrvInfo?.ServiceType?.Trim(), "NewTax", System.StringComparison.OrdinalIgnoreCase) ? "پرتال مودیان باران" : "جدول ها | کنترل پنل")</title>
+    <!-- Tell the browser to be responsive to screen width -->
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <!-- Bootstrap 3.3.7 -->
+    @* <link rel="stylesheet" href="~/css/bootstrap.min.css"> *@
+    <link rel="stylesheet" href="~/Content/dist/css/bootstrap-theme.css">
+
+    <!-- Bootstrap rtl -->
+    <link rel="stylesheet" href="~/Content/dist/css/rtl.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="~/Content/bower_components/font-awesome/css/font-awesome.min.css">
+    <!-- Ionicons -->
+    <link rel="stylesheet" href="~/Content/bower_components/Ionicons/css/ionicons.min.css">
+    <!-- DataTables -->
+    <link rel="stylesheet" href="~/Content/bower_components/datatables.net-bs/css/dataTables.bootstrap.min.css">
+    <link rel="stylesheet" href="~/Content/dist/css/AdminLTE.css">
+    <link rel="stylesheet" href="~/css/bootstrap-multiselect.css">
+    <link rel="stylesheet" href="~/css/select2.min.css">
+
+    <link rel="stylesheet" href="~/Content/dist/css/skins/_all-skins.min.css">
+@* 
+    <link href="~/Content/PersianDateTimePicker/persian-datepicker.min.css" rel="stylesheet" />
+    <link href="~/Content/PersianDateTimePicker/theme/persian-datepicker-blue.min.css" rel="stylesheet" /> *@
+    <link href="~/Content/MdBootstrapPersianDateTimePicker/jquery.Bootstrap-PersianDateTimePicker.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700,300italic,400italic,600italic">
+    <script src="~/Content/MdBootstrapPersianDateTimePicker/jalaali.js"></script>
+
+    <link href="~/Scripts/pnotify/dist/pnotify.css" rel="stylesheet" />
+    <link href="~/Scripts/pnotify/dist/pnotify.buttons.css" rel="stylesheet" />
+    <link href="~/Scripts/pnotify/dist/pnotify.nonblock.css" rel="stylesheet" />
+
+    <style type="text/css">
+        /*.item {
+                    margin: 0;
+                }
+                .no-gap {
+                    margin: 0;
+                }*/
+        body {
+            font-size: 16px; /* Default font size */
+            background-color: darkgrey; /* پنل کمی روشن‌تر از قبل */
+        }
+
+       .content-wrapper {
+            font-size: 16px; /* Default font size */
+            background-color: lightgray; /* پنل کمی روشن‌تر از قبل */
+        }
+
+        .x_panel, .myContainer {
+            background-color: lightgray; /* پنل کمی روشن‌تر از قبل */
+            border: 1px solid #3e4f5c;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+        button {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        i {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .button {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        table {
+            font-family: 'Segoe UI', Tahoma;
+            font-size: 16px;
+        }
+
+        .row_selected {
+            background-color: cornflowerblue !important;
+            color: black;
+            font-weight: bold;
+        }
+
+        .autocomplete {
+            position: relative;
+            display: inline-block;
+        }
+
+        .autocomplete-items {
+            position: absolute;
+            border: 1px solid #d4d4d4;
+            border-bottom: none;
+            border-top: none;
+            z-index: 99;
+            /*position the autocomplete items to be the same width as the container:*/
+            top: 100%;
+            left: 0;
+            right: 0;
+        }
+
+            .autocomplete-items div {
+                padding: 10px;
+                cursor: pointer;
+                background-color: #fff;
+                border-bottom: 1px solid #d4d4d4;
+            }
+
+                /*when hovering an item:*/
+                .autocomplete-items div:hover {
+                    background-color: #e9e9e9;
+                }
+
+        /*when navigating through the items using the arrow keys:*/
+        .autocomplete-active {
+            background-color: DodgerBlue !important;
+            color: #ffffff;
+        }
+
+        .modal-fullscreen {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            top: 0;
+            left: 0;
+        }
+
+        .min {
+            width: 250px;
+            height: 35px;
+            overflow: hidden !important;
+            padding: 0px !important;
+            margin: 0px;
+            position: absolute !important;
+        }
+
+            .min .modal-dialog, .min .modal-content {
+                height: 100%;
+                width: 100%;
+                margin: 0px !important;
+                padding: 0px !important;
+            }
+
+            .min .modal-header {
+                height: 100%;
+                width: 100%;
+                margin: 0px !important;
+                padding: 3px 5px !important;
+            }
+
+        .display-none {
+            display: none;
+        }
+
+        .modal {
+            overflow-y: auto;
+        }
+
+            .modal.show {
+                z-index: 1050;
+            }
+
+        .modal-backdrop {
+            z-index: 1030;
+        }
+
+            .modal-backdrop.show {
+                z-index: 1040;
+            }
+
+        .content-wrapper {
+            max-height: 80vh; /* Set a maximum height for the content wrapper */
+            overflow-y: auto; /* Allow vertical scrolling if content exceeds max height */
+            padding: 20px; /* Optional: Add some padding */
+        }
+
+        .table {
+            width: 100%; /* Ensure the table takes the full width */
+            table-layout: auto; /* Adjust table layout */
+        }
+
+
+        .mt {
+            margin-top: 20px;
+        }
+
+        .main-header .navbar .company-contact-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin: 8px 24px;
+            padding: 7px 16px;
+            border: 1px solid rgba(255, 255, 255, .42);
+            border-radius: 20px;
+            background: rgba(255, 255, 255, .12);
+            color: #fff;
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 20px;
+            box-shadow: none;
+        }
+
+        .main-header .navbar .company-contact-link:hover,
+        .main-header .navbar .company-contact-link:focus {
+            background: rgba(255, 255, 255, .22);
+            border-color: rgba(255, 255, 255, .7);
+            color: #fff;
+            text-decoration: none;
+        }
+
+    </style>
+    @if (string.Equals(
+        TaxServiceAndApp.BI.BMain.SrvInfo?.ServiceType?.Trim(),
+        "NewTax",
+        System.StringComparison.OrdinalIgnoreCase))
+    {
+        <style>
+            /* نوار بالایی امید را با نوار کناری هماهنگ و سرمه‌ای می‌کنیم. */
+            body.skin-blue {
+                background-color: #fff;
+            }
+
+            body.skin-blue .wrapper {
+                min-height: 100vh;
+                height: auto;
+                overflow-y: visible;
+                background: #fff;
+            }
+
+            .skin-blue .content-wrapper {
+                max-height: none;
+                min-height: calc(100vh - 120px);
+                overflow-y: visible;
+                background-color: #eef2f5;
+            }
+
+            .skin-blue .main-header .navbar {
+                background-color: #30465a;
+            }
+
+            .skin-blue .main-header .navbar .sidebar-toggle:hover,
+            .skin-blue .main-header .navbar .sidebar-toggle:focus {
+                background-color: #26394b;
+            }
+
+            .skin-blue .main-header .logo {
+                background-color: #263746;
+            }
+
+            .skin-blue .main-header .logo:hover {
+                background-color: #202f3c;
+            }
+
+            .skin-blue .main-header .logo .logo-lg {
+                visibility: hidden;
+            }
+
+            .skin-blue .main-header .navbar .newtax-navbar-title {
+                position: absolute;
+                top: 0;
+                left: 50%;
+                transform: translateX(-50%);
+                height: 50px;
+                display: flex;
+                align-items: center;
+                color: #fff;
+                font-size: 17px;
+                font-weight: 700;
+                white-space: nowrap;
+                pointer-events: none;
+            }
+
+            .skin-blue .main-footer {
+                background-color: #30465a;
+                border-top-color: #26394b;
+                color: #fff;
+                min-height: 50px;
+            }
+
+            .skin-blue .main-footer a,
+            .skin-blue .main-footer a:hover {
+                color: #fff;
+            }
+
+            .skin-blue .main-footer .footer-version {
+                float: right;
+                direction: ltr;
+                color: #d8e0e6;
+                font-size: 11px;
+                line-height: 20px;
+            }
+        </style>
+    }
+    <link rel="stylesheet" href="~/Content/NewTaxTheme.css" asp-append-version="true" />
+</head>
+<body class="hold-transition skin-blue sidebar-mini">
+    <div class="wrapper">
+
+        <header class="main-header">
+            <a href="/NewTax/Dashboard" class="logo">
+                <span class="logo-mini">پنل</span>
+                <span class="logo-lg"><b>@(string.Equals(TaxServiceAndApp.BI.BMain.SrvInfo?.ServiceType?.Trim(), "NewTax", System.StringComparison.OrdinalIgnoreCase) ? "پرتال مودیان باران" : "کنترل پنل مدیریت")</b></span>
+            </a>
+            <nav class="navbar navbar-static-top">
+                <a href="#" class="sidebar-toggle" data-toggle="push-menu" role="button">
+                    <span class="sr-only">Toggle navigation</span>
+                </a>
+                @if (string.Equals(
+                    TaxServiceAndApp.BI.BMain.SrvInfo?.ServiceType?.Trim(),
+                    "NewTax",
+                    System.StringComparison.OrdinalIgnoreCase))
+                {
+                    <span class="newtax-navbar-title">پرتال مودیان باران <small>ارسال مستقیم</small></span>
+                }
+                <a href="https://arghamnegargroup.com/" target="_blank" rel="noopener noreferrer" class="company-contact-link hidden-xs">
+                    <i class="fa fa-headphones" aria-hidden="true"></i>
+                    <span>ارتباط با شرکت</span>
+                </a>
+
+                <div class="navbar-custom-menu">
+                    <ul class="nav navbar-nav">
+                        <li class="dropdown user user-menu" id="NoteClick"
+                            onclick="MDL_EntityComment.MDL_EntityComment_ShowAdmin();">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                                <img src="~/Content/dist/img/sticky3.png" class="user-image" alt="User Image">
+                                <span class="hidden-xs">یادداشت ها</span>
+                            </a>
+                        </li>
+
+                        <li class="dropdown user user-menu">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                                <img src="~/Content/dist/img/avatar5.png" class="user-image" alt="User Image">
+                                <span class="hidden-xs">نام کاربر</span>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li class="user-header">
+                                    <img src="~/Content/dist/img/avatar5.png" class="img-circle" alt="User Image">
+
+                                    <p>
+                                        نام کاربر
+                                        <small>سمت</small>
+                                    </p>
+                                </li>
+                                <li class="user-body">
+                                    <div class="row">
+                                        <div class="col-xs-4 text-center">
+                                            <a href="#">صفحه من</a>
+                                        </div>
+                                        <div class="col-xs-4 text-center">
+                                            <a href="#">فروش</a>
+                                        </div>
+                                        <div class="col-xs-4 text-center">
+                                            <a href="#">وضعیت ارسالی</a>
+                                        </div>
+                                    </div>
+                                </li>
+                                <li class="user-footer">
+                                    <div class="pull-right">
+                                        <a href="#" class="btn btn-default btn-flat">پروفایل</a>
+                                    </div>
+                                    <div class="pull-left">
+                                        <a href="#" class="btn btn-default btn-flat">خروج</a>
+                                    </div>
+                                </li>
+                            </ul>
+                        </li>
+                        <li>
+                            <a href="#" data-toggle="control-sidebar"><i class="fa fa-gears"></i></a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+        </header>
+        <aside class="main-sidebar">
+            <section class="sidebar">
+                <div class="user-panel">
+                    <div class="pull-right image">
+                        <img src="~/Content/dist/img/user-placeholder.svg" class="img-circle" alt="تصویر پیش‌فرض کاربر">
+                    </div>
+                    <div class="pull-right info">
+                        <p>نام کاربر</p>
+                        <a href="#"><i class="fa fa-circle text-success"></i> آنلاین</a>
+                    </div>
+                </div>
+                <ul class="sidebar-menu" data-widget="tree">
+                    <li class="header">منو</li>
+
+                    @{ var isNewTaxService = string.Equals(
+                        TaxServiceAndApp.BI.BMain.SrvInfo?.ServiceType?.Trim(),
+                        "NewTax",
+                        System.StringComparison.OrdinalIgnoreCase); }
+
+                    @if (isNewTaxService)
+                    {
+                        <li id="menu-invoice">
+                            <a asp-controller="NewTax" asp-action="Send">
+                                <i class="fa fa-file-text-o"></i>
+                                <span>پنل ارسال صورتحساب</span>
+                            </a>
+                        </li>
+                        <li id="menu-inquiry">
+                            <a asp-controller="NewTax" asp-action="Inquiry">
+                                <i class="fa fa-search"></i>
+                                <span>پنل استعلام صورتحساب</span>
+                            </a>
+                        </li>
+                        <li class="header">گزارشات</li>
+                        <li id="menu-newtax-dashboard">
+                            <a asp-controller="NewTax" asp-action="Dashboard">
+                                <i class="fa fa-bar-chart" aria-hidden="true"></i>
+                                <span> وضعیت صورت حساب</span>
+                            </a>
+                        </li>
+                        <li class="header">ابزارهای سیستم</li>
+                        <li id="menu-system-logs">
+                            <a asp-controller="SystemTools" asp-action="Unlock" asp-route-target="logs">
+                                <i class="fa fa-file-text-o"></i>
+                                <span>لاگ‌های سیستم</span>
+                            </a>
+                        </li>
+                    }
+                    else
+                    {
+                        <li id="menu-invoice" class="active treeview">
+                            <a href="#">
+                                <i class="fa fa-dashboard"></i> <span>فاکتورها</span>
+                                <span class="pull-left-container">
+                                    <i class="fa fa-angle-right pull-left"></i>
+                                </span>
+                            </a>
+                            <ul class="treeview-menu">
+                                <li class="active"><a href="~/SendInvoice/Index"><i class="fa fa-circle-o"></i>فاکتورها</a></li>
+                            </ul>
+                        </li>
+                        <li id="menu-inquiry" class="active treeview">
+                            <a href="#">
+                                <i class="fa fa-dashboard"></i> <span>استعلامات</span>
+                                <span class="pull-left-container">
+                                    <i class="fa fa-angle-right pull-left"></i>
+                                </span>
+                            </a>
+                            <ul class="treeview-menu">
+                                <li class="active"><a href="~/General/InquryIndex"><i class="fa fa-circle-o"></i>استعلام</a></li>
+                            </ul>
+                        </li>
+
+                        <li class="header">ابزارهای سیستم</li>
+                        @* برای سرویس‌های دیگر، لاگ فقط از خود سرور در منو دیده شود. *@
+                        @if (Context.Connection.RemoteIpAddress is { } remoteIp &&
+                        System.Net.IPAddress.IsLoopback(remoteIp))
+                        {
+                            <li id="menu-system-logs">
+                                <a asp-controller="SystemLogs" asp-action="Index">
+                                    <i class="fa fa-file-text-o"></i>
+                                    <span>لاگ‌های سیستم</span>
+                                </a>
+                            </li>
+                        }
+                    }
+
+                    <li id="menu-customer-settings">
+                        <a asp-controller="SystemTools" asp-action="Unlock" asp-route-target="customer">
+                            <i class="fa fa-sliders" aria-hidden="true"></i>
+                            <span>تنظیمات ارسال</span>
+                        </a>
+                    </li>
+                </ul>
+            </section>
+        </aside>
+
+        <div class="content-wrapper">
+            @RenderBody()
+        </div>
+        <footer class="main-footer text-left">
+            <strong>&copy; 2019-2025 <a href="https://arghamnegargroup.com/">Argham Negar Group</a></strong>
+            <span class="footer-version" aria-label="نسخهٔ نرم‌افزار">Version 3.1.0.1</span>
+        </footer>
+
+        <aside class="control-sidebar control-sidebar-dark">
+            <ul class="nav nav-tabs nav-justified control-sidebar-tabs">
+                <li><a href="#control-sidebar-home-tab" data-toggle="tab"><i class="fa fa-home"></i></a></li>
+                <li><a href="#control-sidebar-settings-tab" data-toggle="tab"><i class="fa fa-gears"></i></a></li>
+            </ul>
+
+
+        </aside>
+
+        <div class="control-sidebar-bg"></div>
+    </div>
+    <div>
+        @Html.Partial("~/views/shared/partial/MDL_EC_EntityComments.cshtml")
+    </div>
+    <script src="~/Content/bower_components/jquery/dist/jquery.min.js"></script>
+    <script src="~/Content/Tools/MDL_APIListAddress.js"></script>
+
+    <script src="~/Content/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="~/Content/PersianDateTimePicker/persian-date.min.js"></script>
+    <script src="~/Content/PersianDateTimePicker/persian-datepicker.min.js"></script>
+    <script src="~/Content/MdBootstrapPersianDateTimePicker/jquery.Bootstrap-PersianDateTimePicker.js"></script>
+    <script src="~/Content/bower_components/datatables.net/js/jquery.dataTables.min.js"></script>
+    <script src="~/Content/bower_components/datatables.net-bs/js/dataTables.bootstrap.min.js"></script>
+    <script src="~/Content/bower_components/jquery-slimscroll/jquery.slimscroll.min.js"></script>
+    <script src="~/Content/bower_components/fastclick/lib/fastclick.js"></script>
+    <script src="~/Content/dist/js/adminlte.min.js"></script>
+    <script src="~/Content/dist/js/demo.js"></script>
+    <script src="~/Content/MyJS/custom.js"></script>
+    <script src="~/Content/MyJS/MDL_EC_EntityComments.js"></script>
+    @* <script src="~/css/bootstrap.bundle.min.js"></script> *@
+    <script src="~/css/bootstrap-multiselect.min.js"></script>
+    <script src="~/css/select2.min.js"></script>
+
+    @*<script src="~/Scripts/dataTables.select.min.js"></script>*@
+    <script src="~/Content/MyJS/lodash.min.js"></script>
+    @*<script src="https://cdn.datatables.net/select/1.3.1/js/dataTables.select.min.js"></script>*@
+    <script src="~/Content/MyJS/dataTables.select.min.js"></script>
+
+    <script src="~/scripts/pnotify/dist/pnotify.js"></script>
+    <script src="~/scripts/pnotify/dist/pnotify.buttons.js"></script>
+
+    <script src="~/scripts/signalr.min.js"></script>
+
+    @RenderSection("js_UAGManagment", false)
+</body>
+</html>

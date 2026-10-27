@@ -31,6 +31,7 @@ namespace TaxWebAppCore8.Controllers
         }
         public ActionResult InquryIndex()
         {
+            if (NewTaxController.IsNewTax) return RedirectToAction("Inquiry", "NewTax");
             return View("~/Views/Home/InquryMainPage.cshtml");
         }
 

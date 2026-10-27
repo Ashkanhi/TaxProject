@@ -53,7 +53,7 @@ namespace TaxWebAppCore8.Controllers
 
         public ActionResult Index()
         {
-
+            if (NewTaxController.IsNewTax) return RedirectToAction("Send", "NewTax");
             return View("~/Views/Home/Index.cshtml");
         }
 

@@ -1,0 +1,404 @@
+/* Independent copy of the Omid page theme; loaded only by the NewTax layout. */
+#newtaxSendPage #frmSearch > .row, #newtaxInquiryPage #frmSearch > .row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
+#newtaxSendPage #frmSearch > .row::before, #newtaxSendPage #frmSearch > .row::after,
+#newtaxInquiryPage #frmSearch > .row::before, #newtaxInquiryPage #frmSearch > .row::after { display: none; }
+#newtaxSendPage #frmSearch > .row > .form-group, #newtaxInquiryPage #frmSearch > .row > .form-group { width: 100%; float: none; padding: 0; margin: 0; }
+#newtaxSendPage #frmSearch > .row > .form-group > label { width: 100%; float: none; padding: 0; margin-bottom: 8px; }
+#newtaxSendPage #frmSearch > .row > .form-group > div { width: 100%; float: none; padding: 0; }
+#newtaxSendPage #frmSearch .form-control, #newtaxInquiryPage #frmSearch .form-control { min-height: 42px; }
+#newtaxSendPage #frmSearch .input-group, #newtaxInquiryPage #frmSearch .input-group { width: 100%; }
+@media (max-width: 1100px) { #newtaxSendPage #frmSearch > .row, #newtaxInquiryPage #frmSearch > .row { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (max-width: 540px) { #newtaxSendPage #frmSearch > .row, #newtaxInquiryPage #frmSearch > .row { grid-template-columns: 1fr; } }
+#newtaxSendPage > div > .x_panel:first-child,
+#newtaxInquiryPage .myContainer > .x_panel:first-child { overflow: visible !important; }
+#newtaxSendPage > div > .x_panel:first-child > .card-body { z-index: 5; }
+#newtaxSendPage #frmSearch .select2-hidden-accessible, #newtaxInquiryPage #frmSearch .select2-hidden-accessible { min-height: 1px !important; }
+.newtax-store-field .select2-container--open { z-index: 1060; }
+#newtaxSendPage .newtax-store-field, #newtaxInquiryPage .newtax-store-field { position: relative; width: 100%; direction: rtl; text-align: right; }
+#newtaxSendPage .newtax-store-field > label, #newtaxInquiryPage .newtax-store-field > label { display: block; margin: 0 0 8px; }
+.newtax-store-label { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+#newtaxSendPage .newtax-store-label label, #newtaxInquiryPage .newtax-store-label label { margin: 0; }
+.newtax-store-field .select2-container { width: 100% !important; direction: rtl; text-align: right; }
+.newtax-store-field .select2-container .select2-selection--multiple { min-height: 42px; border: 1px solid #dce5ed !important; border-radius: 9px; background: #fff; padding: 3px 6px; }
+.newtax-store-field .select2-container--focus .select2-selection--multiple { border-color: #146f7b !important; box-shadow: 0 0 0 3px #146f7b15; }
+.newtax-store-field .select2-container .select2-selection__rendered { display: flex !important; flex-wrap: wrap; gap: 4px; max-height: 96px; overflow-y: auto; padding: 0 !important; }
+.newtax-store-field .select2-container .select2-selection__choice { background: #eaf4f5; color: #195763; border: 1px solid #cce3e6; border-radius: 6px; margin: 2px 0 !important; padding: 3px 6px; white-space: normal; float: none !important; }
+.newtax-store-field .select2-selection__choice__remove { margin-left: 6px !important; color: #195763 !important; }
+.newtax-store-field .select2-search--inline { float: none !important; min-width: 120px; flex: 1; }
+.newtax-store-field .select2-search__field { direction: rtl; text-align: right; font-family: inherit; width: 100% !important; min-height: 26px; margin: 2px 0 !important; }
+.newtax-store-field .select2-dropdown { border-color: #cbdde3; border-radius: 9px; overflow: hidden; box-shadow: 0 10px 25px #19334a18; direction: rtl; text-align: right; }
+.newtax-store-field .select2-results__option { padding: 10px 12px; line-height: 1.7; }
+.newtax-store-field .select2-results__option--highlighted[aria-selected] { background: #146f7b; }
+.newtax-store-field .select2-results__option[aria-selected=true] { background: #eaf4f5; color: #195763; }
+.newtax-store-footer { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-top: 7px; font-size: 11px; color: #63788b; line-height: 1.8; }
+.newtax-store-field .newtax-store-clear { border: 0; background: transparent; color: #146f7b; padding: 0; white-space: nowrap; font-size: 11px; }
+.newtax-store-field [hidden] { display: none !important; }
+.newtax-store-clear:disabled { color: #8597a6; cursor: default; }
+.newtax-store-clear:focus-visible { outline: 2px solid #146f7b; outline-offset: 3px; }
+#newtaxSendPage .newtax-table-toolbar, #newtaxInquiryPage .newtax-table-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 18px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #e5edf2; direction: rtl; }
+#newtaxSendPage .newtax-table-toolbar h2, #newtaxInquiryPage .newtax-table-toolbar h2 { margin: 0; font-size: 17px; color: #19334a; font-weight: 700; }
+.newtax-table-toolbar h2 i { color: #146f7b; margin-left: 8px; }
+.newtax-table-search { width: 320px; max-width: 100%; }
+.newtax-table-search label { font-size: 12px; margin-bottom: 7px; }
+.newtax-table-search > div { position: relative; }
+.newtax-table-search i { position: absolute; right: 13px; top: 14px; color: #708394; }
+#newtaxSendPage .newtax-table-search input { width: 100%; height: 42px; border: 1px solid #dce5ed; border-radius: 9px; padding: 8px 36px 8px 12px; background: #f8fafc; direction: rtl; text-align: right; font: inherit; font-size: 13px; }
+#newtaxSendPage .newtax-table-search input:focus { outline: none; border-color: #146f7b; box-shadow: 0 0 0 3px #146f7b15; }
+#newtaxSendPage #newtaxInvoices_length { text-align: right; float: none; margin-bottom: 12px; font-size: 12px; }
+#newtaxSendPage #newtaxInvoices_length select { border: 1px solid #dce5ed; border-radius: 6px; margin: 0 6px; }
+@media (max-width: 767px) { .newtax-table-search { width: 100%; } }
+.content-wrapper:has(#newtaxSendPage),
+.content-wrapper:has(#newtaxInquiryPage) {
+    background-color: #eef2f5;
+}
+
+.newtax-page-heading {
+    margin-bottom: 16px;
+}
+
+.newtax-page-heading h1 {
+    color: #183047;
+    font-size: 25px;
+    font-weight: 700;
+}
+
+#newtaxSendPage .newtax-card-heading,
+#newtaxInquiryPage .newtax-card-heading {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    margin: 0 0 16px;
+    padding: 0 0 13px;
+    border-bottom: 1px solid var(--newtax-border, #dce5ed);
+    direction: rtl;
+}
+
+#newtaxSendPage .newtax-card-heading-icon,
+#newtaxInquiryPage .newtax-card-heading-icon {
+    display: inline-flex;
+    width: 36px;
+    height: 36px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: #e7f0f4;
+    color: #146f7b;
+    font-size: 16px;
+}
+
+#newtaxSendPage .newtax-card-heading h1,
+#newtaxInquiryPage .newtax-card-heading h1 {
+    margin: 0;
+    color: #183047;
+    font-size: 19px;
+    font-weight: 700;
+    line-height: 1.5;
+}
+
+#newtaxSendPage,
+#newtaxInquiryPage {
+    --newtax-ink: #183047;
+    --newtax-muted: #617488;
+    --newtax-border: #dce5ed;
+    --newtax-surface: #ffffff;
+    --newtax-soft: #f4f8fb;
+    --newtax-primary: #146f7b;
+    --newtax-primary-hover: #0f5963;
+    color: var(--newtax-ink);
+}
+
+#newtaxSendPage .x_panel,
+#newtaxInquiryPage .x_panel,
+#newtaxInquiryPage .myContainer {
+    background: var(--newtax-surface);
+    border: 1px solid var(--newtax-border);
+    border-radius: 14px;
+    box-shadow: 0 4px 18px rgba(24, 48, 71, .07);
+    padding: 22px;
+    margin-bottom: 20px;
+}
+
+#newtaxInquiryPage .myContainer {
+    max-width: none;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+    background: transparent;
+}
+
+/* لوگوی موجود در پروژه فقط در کارت جستجو و با شدت بسیار کم دیده می‌شود. */
+#newtaxSendPage > div > .x_panel:first-child,
+#newtaxInquiryPage .myContainer > .x_panel:first-child {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+}
+
+#newtaxSendPage > div > .x_panel:first-child::before,
+#newtaxInquiryPage .myContainer > .x_panel:first-child::before {
+    content: "";
+    position: absolute;
+    left: 18px;
+    bottom: 8px;
+    width: 145px;
+    height: 135px;
+    z-index: 0;
+    pointer-events: none;
+    background: url("dist/img/argham.png") center center / contain no-repeat;
+    opacity: .055;
+}
+
+#newtaxSendPage > div > .x_panel:first-child > *,
+#newtaxInquiryPage .myContainer > .x_panel:first-child > * {
+    position: relative;
+    z-index: 1;
+}
+
+#newtaxSendPage .form-control,
+#newtaxInquiryPage .form-control,
+#newtaxSendPage .input-group-addon,
+#newtaxInquiryPage .input-group-addon {
+    border-color: var(--newtax-border);
+    border-radius: 8px;
+    background-color: #fff;
+    color: var(--newtax-ink);
+    box-shadow: none;
+}
+
+#newtaxSendPage .form-control:focus,
+#newtaxInquiryPage .form-control:focus {
+    border-color: var(--newtax-primary);
+    box-shadow: 0 0 0 3px rgba(20, 111, 123, .14);
+}
+
+#newtaxSendPage label,
+#newtaxInquiryPage label {
+    color: var(--newtax-ink);
+    font-weight: 600;
+}
+
+#newtaxSendPage #butensDiv,
+#newtaxInquiryPage #butensDiv {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-top: 10px;
+}
+
+#newtaxSendPage #butensDiv .btn,
+#newtaxInquiryPage #butensDiv .btn {
+    margin: 0;
+    min-height: 38px;
+    padding: 8px 13px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    box-shadow: none;
+    font-size: 13px;
+    font-weight: 600;
+    transition: background-color .15s ease, border-color .15s ease;
+}
+
+#newtaxSendPage #butensDiv .btn:focus-visible,
+#newtaxInquiryPage #butensDiv .btn:focus-visible {
+    outline: 3px solid rgba(20, 111, 123, .28);
+    outline-offset: 2px;
+}
+
+#newtaxSendPage #butensDiv .btn:disabled,
+#newtaxInquiryPage #butensDiv .btn:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+}
+
+#newtaxSendPage #newtaxSearch,
+#newtaxInquiryPage #newtaxSearch {
+    background: #315b80;
+    color: #fff;
+}
+
+#newtaxSendPage #newtaxSearch:hover,
+#newtaxInquiryPage #newtaxSearch:hover {
+    background: #244865;
+}
+
+#newtaxSendPage #newtaxSubmit,
+#newtaxInquiryPage #newtaxSubmit {
+    background: var(--newtax-primary);
+    color: #fff;
+}
+
+#newtaxSendPage #newtaxSubmit:hover,
+#newtaxInquiryPage #newtaxSubmit:hover {
+    background: var(--newtax-primary-hover);
+}
+
+#newtaxSendPage #newtaxSelectAll,
+#newtaxSendPage #newtaxExport,
+#newtaxSendPage #newtaxExport,
+#newtaxSendPage #newtaxExport,
+#newtaxInquiryPage #newtaxExport {
+    background: var(--newtax-soft);
+    border-color: var(--newtax-border);
+    color: var(--newtax-ink);
+}
+
+#newtaxSendPage #newtaxSelectAll:hover,
+#newtaxSendPage #newtaxExport:hover,
+#newtaxSendPage #newtaxExport:hover,
+#newtaxSendPage #newtaxExport:hover,
+#newtaxInquiryPage #newtaxExport:hover {
+    background: #e9f1f5;
+}
+
+#newtaxSendPage #newtaxCheck,
+#newtaxInquiryPage #newtaxCheck {
+    background: #fff5e8;
+    border-color: #f0d8b5;
+    color: #805019;
+}
+
+#newtaxSendPage #newtaxCheck:hover,
+#newtaxInquiryPage #newtaxCheck:hover {
+    background: #ffedd5;
+}
+
+#newtaxSendPage #butensDiv .btn i,
+#newtaxInquiryPage #butensDiv .btn i {
+    color: inherit;
+}
+
+#newtaxSendPage #newtaxInvoices,
+#newtaxInquiryPage #newtaxInvoices {
+    background: var(--newtax-surface);
+    border: 1px solid var(--newtax-border);
+    font-size: 14px;
+}
+
+#newtaxSendPage #newtaxInvoices thead th,
+#newtaxInquiryPage #newtaxInvoices thead th {
+    background: #eaf2f6;
+    border-color: var(--newtax-border);
+    color: var(--newtax-ink);
+    font-size: 14px;
+    font-weight: 700;
+    padding: 11px 9px;
+    white-space: nowrap;
+}
+
+#newtaxSendPage #newtaxInvoices tbody td,
+#newtaxInquiryPage #newtaxInvoices tbody td {
+    border-color: #edf1f5;
+    color: var(--newtax-ink);
+    padding: 10px 9px;
+    vertical-align: middle;
+}
+
+#newtaxSendPage #newtaxInvoices tbody tr:hover,
+#newtaxInquiryPage #newtaxInvoices tbody tr:hover {
+    background: #f1f8fa;
+}
+
+#newtaxSendPage #newtaxInvoices tbody tr.row_selected,
+#newtaxSendPage #newtaxInvoices tbody tr.selected,
+#newtaxInquiryPage #newtaxInvoices tbody tr.row_selected,
+#newtaxInquiryPage #newtaxInvoices tbody tr.selected {
+    background: #dceff1 !important;
+}
+
+#newtaxSendPage #newtaxInvoices tbody tr.row_selected td,
+#newtaxInquiryPage #newtaxInvoices tbody tr.row_selected td {
+    color: #104e58;
+}
+
+#newtaxSendPage #newtaxInvoices tbody tr.row-error {
+    background: #fff0ee !important;
+}
+
+#newtaxSendPage #newtaxInvoices tbody tr.row-success {
+    background: #eaf7ee !important;
+}
+
+#newtaxSendPage #newtaxInvoices tbody tr.row-warning {
+    background: #fff7e8 !important;
+}
+
+#newtaxSendPage #newtaxInvoices tbody tr.row-error td,
+#newtaxSendPage #newtaxInvoices tbody tr.row-success td,
+#newtaxSendPage #newtaxInvoices tbody tr.row-warning td {
+    color: var(--newtax-ink) !important;
+}
+
+#newtaxInquiryPage #newtaxInquiryStatus {
+    background: #edf7f9;
+    border-color: #c8e5e9;
+    color: #195763;
+    border-radius: 8px;
+}
+
+#newtaxInquiryPage #newtaxInquiryResults pre {
+    background: var(--newtax-soft);
+    border: 1px solid var(--newtax-border);
+    border-radius: 8px;
+    padding: 14px;
+    color: var(--newtax-ink);
+}
+
+@media (max-width: 767px) {
+    #newtaxSendPage .x_panel,
+    #newtaxInquiryPage .x_panel {
+        padding: 14px;
+    }
+
+    #newtaxSendPage #butensDiv .btn,
+    #newtaxInquiryPage #butensDiv .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+/* Controls shared by the independent NewTax pages. */
+.newtax-invoices.content { padding: 26px; }
+.newtax-invoices .myContainer { background: transparent; border: 0; box-shadow: none; padding: 0; margin: 0; }
+.newtax-invoices .newtax-service-label { margin-right: auto; color: #63788b; background: #f1f6f9; border-radius: 20px; padding: 5px 12px; font-size: 12px; white-space: nowrap; }
+.newtax-invoices #newtaxSearch { background: #315b80; color: white; }
+.newtax-invoices #newtaxSubmit { background: #146f7b; color: white; }
+.newtax-invoices #newtaxSearch:hover { background: #244865; }
+.newtax-invoices #newtaxSubmit:hover { background: #0f5963; }
+.newtax-invoices .newtax-operation-status { padding: 13px 16px; margin-top: 20px; background: #f0f6fa; border: 1px solid #dce8ef; border-radius: 9px; color: #315b80; font-size: 13px; line-height: 1.9; }
+.newtax-invoices .newtax-operation-status.is-error { background: #fff1f1; border-color: #f3d0d0; color: #a43c45; }
+.newtax-invoices .newtax-operation-status.is-success { background: #eaf7f1; border-color: #cce8db; color: #177552; }
+.newtax-invoices .newtax-selection-summary { display: flex; justify-content: space-between; gap: 12px; margin: 0 0 16px; font-size: 12px; color: #63788b; }
+.newtax-invoices .newtax-selection-summary strong { color: #146f7b; }
+.newtax-invoices #newtaxInvoices { border-color: #dce5ed; font-size: 13px; }
+.newtax-invoices #newtaxInvoices th, .newtax-invoices #newtaxInvoices td { text-align: center; vertical-align: middle; border-color: #e3ebf1; padding: 12px 9px; }
+.newtax-invoices #newtaxInvoices th { background: #eaf2f6; color: #183047; white-space: nowrap; }
+.newtax-invoices #newtaxInvoices tbody td { font-size: 12px; font-weight: normal; line-height: 1.9; }
+.newtax-invoices .newtax-empty { padding: 44px !important; color: #63788b; }
+.newtax-invoices .newtax-reference { font-size: 11px; overflow-wrap: anywhere; }
+.newtax-invoices .newtax-badge { border-radius: 20px; background: #eef2f5; color: #52697b; padding: 5px 10px; display: inline-block; white-space: nowrap; }
+.newtax-invoices .newtax-badge.state-2 { background: #fff3da; color: #926314; }
+.newtax-invoices .newtax-badge.state-3 { background: #fce9ed; color: #a53d51; }
+.newtax-invoices .newtax-badge.state-4 { background: #e5f5ec; color: #197450; }
+.newtax-invoices #newtaxInvoices tbody tr.newtax-selected td { background: #e8f4f5; }
+.newtax-invoices input[type=checkbox] { accent-color: #146f7b; width: 16px; height: 16px; cursor: pointer; }
+.newtax-invoices .newtax-result-items { list-style: none; padding: 0; margin: 0; }
+.newtax-invoices .newtax-result-items li { display: flex; gap: 16px; padding: 12px 0; border-bottom: 1px solid #e5edf2; font-size: 13px; line-height: 1.9; }
+.newtax-invoices .newtax-result-items li:last-child { border: 0; }
+.newtax-invoices .newtax-result-items li.is-success strong { color: #197450; }
+.newtax-invoices .newtax-result-items li.is-error strong { color: #a53d51; }
+.newtax-invoices .newtax-result-items li.is-pending strong { color: #926314; }
+.newtax-invoices #newtaxTableSearch { width: 100%; height: 42px; border: 1px solid #dce5ed; border-radius: 9px; padding: 8px 36px 8px 12px; background: #f8fafc; font: inherit; font-size: 13px; }
+.newtax-invoices #newtaxTableSearch:focus { outline: 2px solid #146f7b; outline-offset: 1px; }
+.newtax-invoices [hidden] { display: none !important; }
+.newtax-invoices .dataTables_length { text-align: right; font-size: 12px; }
+.newtax-invoices .dataTables_info, .newtax-invoices .dataTables_paginate { font-size: 12px; }
+#newtaxConfirm .modal-content { border: 0; border-radius: 14px; overflow: hidden; }
+#newtaxConfirm .modal-title { font-size: 19px; }
+#newtaxConfirm .modal-body { line-height: 2; color: #425c70; }
+#newtaxConfirm .modal-header { background: #f1f6f9; }
+#newtaxConfirm .modal-footer .btn { border-radius: 8px; }
+.newtax-navbar-title small { margin-right: 12px; padding: 3px 9px; border: 1px solid #ffffff40; border-radius: 20px; font-size: 10px; color: #d4e2e9; }
+@media (max-width: 767px) { .newtax-invoices.content { padding: 14px; } .newtax-invoices .newtax-result-items li { flex-direction: column; gap: 3px; } .newtax-navbar-title small { display: none; } }
+@media (max-width: 767px) {
+    .skin-blue .main-header .navbar .newtax-navbar-title { top: -50px; max-width: 90%; font-size: 16px; }
+}

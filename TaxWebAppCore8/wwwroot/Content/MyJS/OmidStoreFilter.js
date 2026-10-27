@@ -17,7 +17,8 @@
             const clear = field.querySelector('.omid-store-clear');
             const update = () => {
                 const count = ($select.val() || []).length;
-                hint.textContent = count ? `${count.toLocaleString('fa-IR')} فروشگاه انتخاب شده` : 'همهٔ فروشگاه‌ها';
+                hint.textContent = count ? `${count.toLocaleString('fa-IR')} فروشگاه انتخاب شده` : '';
+                hint.hidden = count === 0;
                 clear.disabled = count === 0;
                 clear.hidden = count === 0;
                 $select.next('.select2').find('input, textarea').attr({ 'aria-label': 'جستجوی نام فروشگاه', placeholder: count ? 'افزودن فروشگاه…' : 'همهٔ فروشگاه‌ها' });

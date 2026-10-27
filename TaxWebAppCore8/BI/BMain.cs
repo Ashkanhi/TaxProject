@@ -21,6 +21,7 @@ using TaxWebAppCore8.Models.SharedDTO;
 using Org.BouncyCastle.Crypto;
 using System.Reflection;
 using TaxWebAppCore8.BI.Omid;
+using TaxWebAppCore8.BI.NewTax;
 
 namespace TaxServiceAndApp.BI
 {
@@ -34,6 +35,7 @@ namespace TaxServiceAndApp.BI
         // نمونهٔ سرویس‌های موجود پروژه.
         [DataMember] public static TissServise _tissServise;
         [DataMember] public static TaxService _taxService;
+        [DataMember] public static NewTaxService _newTaxService;
         [DataMember] public static RimaService _rimaService;
         [DataMember] public static RimaServiceCalculateMethod _rimaCalcService;
 
@@ -88,6 +90,8 @@ namespace TaxServiceAndApp.BI
 
             if (IsService("Tax"))
                 _taxService = TaxService.getInstance(_Context);
+            else if (IsService("NewTax"))
+                _newTaxService = new NewTaxService(_Context, SrvInfo);
             else if (IsService("Rima"))
                 _rimaService = RimaService.getInstance(_Context);
             else if (IsService("RimaCalculate"))
@@ -114,6 +118,8 @@ namespace TaxServiceAndApp.BI
 
             if (IsService("Tax"))
                 return await _taxService.GetAllInvoice(search);
+            if (IsService("NewTax"))
+                return await _newTaxService.GetAllInvoice(search);
 
             if (IsService("Rima"))
                 return await _rimaService.GetAllInvoice(search);
@@ -145,6 +151,8 @@ namespace TaxServiceAndApp.BI
             if (IsService("Tax"))
                 return await _taxService
                     .GetAllInvoiceByInqFromServer(search);
+            if (IsService("NewTax"))
+                return await _newTaxService.GetAllInvoiceByInqFromServer(search);
 
             if (IsService("Rima"))
                 return await _rimaService
@@ -207,6 +215,8 @@ namespace TaxServiceAndApp.BI
                     .GetInvoiceStatusByDateRange(
                         fromdate,
                         todate);
+            if (IsService("NewTax"))
+                return await _newTaxService.GetInvoiceStatusByDateRange(fromdate, todate);
 
             if (IsService("Rima"))
                 return await _rimaService
@@ -245,6 +255,8 @@ namespace TaxServiceAndApp.BI
             if (IsService("Tax"))
                 return await _taxService
                     .GetInvoiceStatusByRefrenceAsync(invoiceID);
+            if (IsService("NewTax"))
+                return await _newTaxService.GetInvoiceStatusByRefrenceAsync(invoiceID);
 
             if (IsService("Rima"))
                 return await _rimaService
@@ -277,6 +289,8 @@ namespace TaxServiceAndApp.BI
             if (IsService("Tax"))
                 await _taxService
                     .GetNotFinishedLastRefrenceIdAsync();
+            else if (IsService("NewTax"))
+                await _newTaxService.GetNotFinishedLastRefrenceIdAsync();
             else if (IsService("Rima"))
                 await _rimaService
                     .GetNotFinishedLastRefrenceIdAsync();
@@ -300,6 +314,10 @@ namespace TaxServiceAndApp.BI
         /// </summary>
         public static async Task InitAsync()
         {
+            // NewTax initializes on network operations; local lists do not require a key or a token.
+            // Its initialization errors propagate from its own client, outside the legacy catch.
+            if (IsService("NewTax"))
+                return;
             if (IsService("Omid"))
                 return;
 
@@ -346,6 +364,8 @@ namespace TaxServiceAndApp.BI
             if (IsService("Tax"))
                 return await _taxService
                     .SendGroupInvoicesForGroupingAsync(ids);
+            if (IsService("NewTax"))
+                return await _newTaxService.SendGroupInvoicesForGroupingAsync(ids);
 
             if (IsService("Rima"))
                 return await _rimaService
@@ -388,6 +408,8 @@ namespace TaxServiceAndApp.BI
             if (IsService("Tax"))
                 return await _taxService
                     .SendGroupInvoicesForGroupingAsync(invoices);
+            if (IsService("NewTax"))
+                return await _newTaxService.SendInvoiceAsync(invoice, isCancel);
 
             if (IsService("Rima"))
                 return await _rimaService
@@ -444,6 +466,8 @@ namespace TaxServiceAndApp.BI
 
             if (IsService("Tax"))
                 return await _taxService.CheckConnectionAsync();
+            if (IsService("NewTax"))
+                return await _newTaxService.CheckConnectionAsync();
 
             if (IsService("Rima"))
                 return await _rimaService.CheckConnectionAsync();
@@ -497,6 +521,8 @@ namespace TaxServiceAndApp.BI
             if (IsService("Tax"))
                 return await _taxService
                     .GetInvoiceByID(invoiceId);
+            if (IsService("NewTax"))
+                return await _newTaxService.GetInvoiceByID(invoiceId);
 
             if (IsService("Rima"))
                 return await _rimaService

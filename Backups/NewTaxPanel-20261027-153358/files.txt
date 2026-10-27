@@ -1,0 +1,3 @@
+TaxWebAppCore8\Views\NewTax\Invoices.cshtml
+TaxWebAppCore8\wwwroot\Content\NewTaxTheme.css
+TaxWebAppCore8\wwwroot\Content\MyJS\NewTaxInvoices.js

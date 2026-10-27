@@ -1,0 +1,103 @@
+@{
+    Layout = "~/Views/Shared/_NewTaxLayout.cshtml";
+    var inquiry = ViewData["Inquiry"] is true;
+    var title = inquiry ? "پنل استعلام صورتحساب" : "پنل ارسال صورتحساب";
+    ViewData["Title"] = title;
+}
+<section id="@(inquiry ? "newtaxInquiryPage" : "newtaxSendPage")" class="newtax-invoices content" dir="rtl"
+         data-newtax-invoices data-mode="@(inquiry ? "inquiry" : "send")"
+         data-list-url="@Url.Action("List", "NewTax")" data-stores-url="@Url.Action("Stores", "NewTax")"
+         data-operation-url="@Url.Action(inquiry ? "InquirySelected" : "SendSelected", "NewTax")"
+         data-check-url="@Url.Action("CheckConnection", "NewTax")" data-export-url="@Url.Action("Export", "NewTax")">
+    <div class="myContainer">
+        <div class="x_panel">
+            <div class="newtax-card-heading">
+                <span class="newtax-card-heading-icon" aria-hidden="true"><i class="fa @(inquiry ? "fa-download" : "fa-paper-plane-o")"></i></span>
+                <h1>@title</h1><span class="newtax-service-label">ارسال مستقیم</span>
+            </div>
+            <div class="card-body">
+                <form id="frmSearch" autocomplete="off" aria-labelledby="newtaxFiltersTitle">
+                    @Html.AntiForgeryToken()
+                    <h2 id="newtaxFiltersTitle" class="newtax-filter-heading"><i class="fa fa-filter" aria-hidden="true"></i> فیلتر و جستجوی صورتحساب‌ها</h2>
+                    <div class="row form-group">
+                        <div class="form-group">
+                            <label for="newtaxFromDate">از تاریخ</label>
+                            <div class="input-group">
+                                <span class="input-group-addon"><i class="fa fa-calendar" aria-hidden="true"></i></span>
+                                <input id="newtaxFromDate" name="FromDate" class="form-control" placeholder="۱۴۰۵/۰۸/۰۱" inputmode="numeric" required
+                                       data-mddatetimepicker="true" data-trigger="click" data-targetselector="#newtaxFromDate"
+                                       data-groupid="newtaxDates" data-fromdate="true" data-enabletimepicker="false" data-placement="bottom" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="newtaxToDate">تا تاریخ</label>
+                            <div class="input-group">
+                                <span class="input-group-addon"><i class="fa fa-calendar" aria-hidden="true"></i></span>
+                                <input id="newtaxToDate" name="ToDate" class="form-control" placeholder="سال/ماه/روز" inputmode="numeric" required
+                                       data-mddatetimepicker="true" data-trigger="click" data-targetselector="#newtaxToDate"
+                                       data-groupid="newtaxDates" data-todate="true" data-enabletimepicker="false" data-placement="bottom" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="newtaxStatus">وضعیت</label>
+                            <select id="newtaxStatus" name="Status" class="form-control">
+                                <option value="">همه</option>
+                                <option value="1" selected="@(!inquiry)">ارسال نشده</option>
+                                <option value="2" selected="@inquiry">در انتظار استعلام</option>
+                                <option value="3">ارسال‌شده با خطا</option>
+                                <option value="4">ثبت موفق</option>
+                            </select>
+                        </div>
+                        <div class="form-group newtax-store-field">
+                            <div class="newtax-store-label"><label for="newtaxStores">فروشگاه</label><button id="newtaxClearStores" type="button" class="newtax-store-clear" hidden>پاک کردن انتخاب</button></div>
+                            <select id="newtaxStores" name="StoreIds" class="form-control" multiple aria-describedby="newtaxStoreHint"></select>
+                            <div class="newtax-store-footer"><span id="newtaxStoreHint" hidden></span><span id="newtaxStoresStatus" role="status"></span></div>
+                        </div>
+                    </div>
+                    <div id="butensDiv" class="newtax-actions">
+                        <button type="submit" id="newtaxSearch" class="btn custom-search"><i class="fa fa-search" aria-hidden="true"></i> جستجو</button>
+                        <button type="button" id="newtaxExport" class="btn custom-excel" disabled><i class="fa fa-file-excel-o" aria-hidden="true"></i> خروجی اکسل</button>
+                        <button type="button" id="newtaxCheck" class="btn custom-check-connection"><i class="fa fa-plug" aria-hidden="true"></i> تست ارتباط</button>
+                    </div>
+                </form>
+                <div id="newtaxStatusMessage" class="newtax-operation-status" role="status" aria-live="polite">بازهٔ تاریخ را انتخاب و جستجو کنید.</div>
+            </div>
+        </div>
+        <div class="x_panel newtax-results-card">
+            <div class="newtax-table-toolbar">
+                <div class="newtax-list-heading"><h2><i class="fa fa-list-alt" aria-hidden="true"></i> @(inquiry ? "صورتحساب‌های قابل استعلام" : "فهرست صورتحساب‌ها")</h2><span id="newtaxResultCount">۰ صورتحساب</span></div>
+                <div class="newtax-table-search"><label for="newtaxTableSearch">جستجو در نتایج</label><div><i class="fa fa-search" aria-hidden="true"></i><input id="newtaxTableSearch" type="search" placeholder="شماره فاکتور، مشتری یا شعبه" /></div></div>
+            </div>
+            <div class="newtax-selection-bar" dir="rtl">
+                <div class="newtax-actions">
+                    <button type="button" id="newtaxSelectAll" class="btn custom-select-all" disabled><i class="fa fa-check-square-o" aria-hidden="true"></i> انتخاب همه نتایج</button>
+                    <button type="button" id="newtaxSubmit" class="btn custom-send-group" disabled><i class="fa @(inquiry ? "fa-bolt" : "fa-paper-plane-o")" aria-hidden="true"></i> @(inquiry ? "استعلام صورتحساب" : "ارسال صورتحساب")</button>
+                </div>
+                <div class="newtax-selection-summary" aria-live="polite">
+                    <span class="newtax-selection-stat"><span>انتخاب‌شده</span><bdi id="newtaxSelectionCount">۰</bdi></span>
+                    <span class="newtax-selection-stat"><span>جمع مبلغ خالص انتخاب‌ها</span><bdi id="newtaxSelectionAmount">۰</bdi></span>
+                </div>
+            </div>
+            <div class="table-responsive newtax-table-scroll" tabindex="0" role="region" aria-label="فهرست صورتحساب‌ها؛ برای مشاهدهٔ ستون‌ها پیمایش کنید">
+                <table id="newtaxInvoices" class="table table-striped table-bordered" style="width:100%">
+                    <thead><tr><th><input id="newtaxSelectPage" type="checkbox" aria-label="انتخاب نتایج این صفحه" disabled /></th><th>ردیف</th><th>شعبه</th><th>شماره فاکتور</th><th>وضعیت</th><th>توضیح وضعیت</th><th>تاریخ ثبت</th><th>مشتری</th><th>مبلغ خالص</th><th>مالیات</th><th>شماره پیگیری</th></tr></thead>
+                    <tbody><tr><td colspan="11" class="newtax-empty">برای نمایش صورتحساب‌ها جستجو کنید.</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+        <div id="newtaxResults" class="x_panel" hidden>
+            <div class="newtax-table-toolbar"><h2><i class="fa fa-info-circle" aria-hidden="true"></i> نتیجهٔ عملیات</h2></div>
+            <ul id="newtaxResultItems" class="newtax-result-items"></ul>
+        </div>
+    </div>
+</section>
+<div id="newtaxConfirm" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="newtaxConfirmTitle">
+    <div class="modal-dialog" role="document"><div class="modal-content" dir="rtl">
+        <div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-label="بستن"><span aria-hidden="true">×</span></button><h2 id="newtaxConfirmTitle" class="modal-title">تأیید ارسال صورتحساب</h2></div>
+        <div class="modal-body"><p id="newtaxConfirmText"></p><p>پس از ارسال، نتیجهٔ نهایی را از پنل استعلام پیگیری کنید.</p></div>
+        <div class="modal-footer"><button type="button" class="btn btn-default" data-dismiss="modal">بازگشت</button><button id="newtaxConfirmSend" type="button" class="btn btn-success">تأیید و ارسال</button></div>
+    </div></div>
+</div>
+@section js_UAGManagment {
+    <script src="~/Content/MyJS/NewTaxInvoices.js" asp-append-version="true"></script>
+}

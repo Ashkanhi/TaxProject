@@ -1,0 +1,47 @@
+.content-wrapper:has(#newtaxDashboard) { background: #eef3f7; }
+#newtaxDashboard { color: #19334a; padding: 26px; }
+#newtaxDashboard .dashboard-heading { display: flex; justify-content: space-between; align-items: center; gap: 20px; margin-bottom: 24px; }
+#newtaxDashboard h1 { font-size: 28px; font-weight: 700; margin: 8px 0; }
+#newtaxDashboard .dashboard-eyebrow { color: #147b8a; font-size: 13px; }
+#newtaxDashboard .dashboard-heading p, #newtaxDashboard .dashboard-metric p { color: #63788b; }
+#newtaxDashboard .btn-primary { background: #146f7b; border-color: #146f7b; border-radius: 10px; padding: 11px 18px; }
+#newtaxDashboard .dashboard-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-bottom: 24px; }
+#newtaxDashboard .metric-sent { --metric: #287ac0; --tint: #eaf3fc; }
+#newtaxDashboard .metric-inquiry-error { --metric: #a86b12; --tint: #fff5e3; }
+#newtaxDashboard .metric-accepted { --metric: #17805f; --tint: #e7f6ef; }
+#newtaxDashboard .metric-newtax-error { --metric: #c34857; --tint: #fcecf0; }
+#newtaxDashboard .dashboard-metric { background: white; border: 1px solid #dce5ed; border-top: 4px solid var(--metric); border-radius: 14px; padding: 20px; box-shadow: 0 5px 18px #19334a08; }
+#newtaxDashboard .dashboard-metric > i { background: var(--tint); color: var(--metric); border-radius: 10px; padding: 12px; font-size: 22px; }
+#newtaxDashboard .dashboard-metric h2 { font-size: 16px; margin: 18px 0 10px; font-weight: 700; }
+#newtaxDashboard .dashboard-metric strong { display: block; font-size: 38px; font-weight: 700; color: var(--metric); margin-bottom: 8px; overflow-wrap: anywhere; }
+#newtaxDashboard .dashboard-metric p { font-size: 12px; line-height: 1.9; margin: 0; }
+#newtaxDashboard .dashboard-charts { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
+#newtaxDashboard .dashboard-chart { background: white; border: 1px solid #dce5ed; border-radius: 14px; padding: 20px; min-width: 0; }
+#newtaxDashboard .dashboard-donut { width: 210px; height: 210px; border-radius: 50%; margin: 12px auto 22px; display: grid; place-items: center; background: #e5ebf0; }
+#newtaxDashboard .dashboard-donut-center { width: 142px; height: 142px; border-radius: 50%; background: white; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+#newtaxDashboard .dashboard-donut-center strong { font-size: 28px; max-width: 130px; overflow-wrap: anywhere; }
+#newtaxDashboard .dashboard-donut-center span { font-size: 12px; color: #63788b; }
+#newtaxDashboard .dashboard-pie-legend { list-style: none; padding: 0; margin: 0; }
+#newtaxDashboard .dashboard-pie-legend li { display: flex; align-items: center; gap: 8px; margin: 10px 0; font-size: 12px; }
+#newtaxDashboard .dashboard-pie-legend i { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+#newtaxDashboard .dashboard-pie-legend strong { margin-right: auto; white-space: nowrap; }
+#newtaxDashboard .dashboard-chart-heading { display: flex; justify-content: space-between; align-items: center; gap: 15px; }
+#newtaxDashboard .dashboard-chart h2 { margin: 0 0 18px; font-size: 19px; font-weight: 700; }
+#newtaxDashboard .dashboard-chart-heading span, #dashboardStatus { color: #63788b; font-size: 13px; }
+#newtaxDashboard .dashboard-bar-row { display: grid; grid-template-columns: 110px minmax(0,1fr) 65px; gap: 10px; align-items: center; margin: 24px 0; font-size: 12px; }
+#newtaxDashboard .dashboard-bar-row strong { color: var(--metric); text-align: left; font-size: 20px; }
+#newtaxDashboard .dashboard-track { height: 18px; border-radius: 6px; background: #f0f4f8; overflow: hidden; }
+#newtaxDashboard .dashboard-bar { background: var(--metric); width: 0; height: 100%; border-radius: 6px; transition: width .35s ease; }
+#newtaxDashboard .dashboard-note { color: #63788b; line-height: 2; border-top: 1px solid #e8edf2; padding-top: 18px; margin: 22px 0 0; font-size: 13px; }
+#newtaxDashboard [hidden] { display: none !important; }
+@media (max-width: 1100px) { #newtaxDashboard .dashboard-metrics { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media (max-width: 900px) { #newtaxDashboard .dashboard-charts { grid-template-columns: 1fr; } }
+@media (max-width: 600px) {
+    #newtaxDashboard { padding: 14px; }
+    #newtaxDashboard .dashboard-heading { align-items: flex-start; flex-direction: column; }
+    #newtaxDashboard .dashboard-metrics { grid-template-columns: 1fr; }
+    #newtaxDashboard .dashboard-chart { padding: 16px; }
+    #newtaxDashboard .dashboard-bar-row { grid-template-columns: minmax(0,1fr) 70px; gap: 8px; }
+    #newtaxDashboard .dashboard-bar-row > span { grid-column: 1 / -1; }
+}
+@media (prefers-reduced-motion: reduce) { #newtaxDashboard .dashboard-bar { transition: none; } }

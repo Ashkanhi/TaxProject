@@ -15,7 +15,8 @@ namespace TaxWebAppCore8.Controllers
         }
 
         public IActionResult Index()
-        {            
+        {
+            if (NewTaxController.IsNewTax) return RedirectToAction("Dashboard", "NewTax");
             return View();
         }
 

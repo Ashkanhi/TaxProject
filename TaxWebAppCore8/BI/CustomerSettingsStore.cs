@@ -23,7 +23,8 @@ public sealed class CustomerSettingsStore(string resourcesPath)
     public static readonly Dictionary<string, string> Services = new()
     {
         ["Omid"] = "امید", ["Tax"] = "مستقیم", ["Rima"] = "ریما",
-        ["RimaCalculate"] = "ریما با محاسبه", ["Tis"] = "تیس"
+        ["RimaCalculate"] = "ریما با محاسبه", ["Tis"] = "تیس",
+        ["NewTax"] = "مستقیم بدون گواهی (NewTax)"
     };
     public static readonly CustomerSettingField[] Fields =
     [
@@ -33,6 +34,8 @@ public sealed class CustomerSettingsStore(string resourcesPath)
         new("StoreId", "شناسه فروشگاه", "اطلاعات مشتری"),
         new("ServiceType", "نوع ارسال", "سرویس ارسال"),
         new("API_URL", "آدرس سرویس", "سرویس ارسال", Services: "Tax Rima RimaCalculate Tis"),
+        new("NEWTAX_API_URL", "آدرس سرویس NewTax", "تنظیمات NewTax", Services: "NewTax"),
+        new("NEWTAX_PRIVATE_KEY_PATH", "مسیر فایل کلید خصوصی PEM روی سرور", "تنظیمات NewTax", Services: "NewTax"),
         new("OMID_API_URL", "آدرس سرویس امید", "تنظیمات امید", Services: "Omid"),
         new("OMID_USERNAME", "نام کاربری امید", "تنظیمات امید", Services: "Omid"),
         new("OMID_PASSWORD", "رمز عبور امید", "تنظیمات امید", true, "Omid"),
@@ -129,9 +132,18 @@ public sealed class CustomerSettingsStore(string resourcesPath)
             if (!int.TryParse(Get("ConnectionTimeOut"), out var timeout) || timeout < 1 || timeout > 3600)
                 errors.Add("مهلت اتصال باید عددی بین ۱ تا ۳۶۰۰ باشد.");
             if (!int.TryParse(Get("StoreId"), out var store) || store < -1) errors.Add("شناسه فروشگاه باید عددی از منفی یک به بالا باشد.");
-            var urlKey = Get("ServiceType") == "Omid" ? "OMID_API_URL" : "API_URL";
+            var urlKey = Get("ServiceType") switch { "Omid" => "OMID_API_URL", "NewTax" => "NEWTAX_API_URL", _ => "API_URL" };
             if (!Uri.TryCreate(Get(urlKey), UriKind.Absolute, out var uri) || (uri.Scheme != "https" && uri.Scheme != "http"))
                 errors.Add("آدرس سرویس انتخاب‌شده باید یک آدرس معتبر HTTP یا HTTPS باشد.");
+            if (Get("ServiceType") == "NewTax")
+            {
+                if (uri?.Scheme != "https" || !string.IsNullOrEmpty(uri.UserInfo) || !string.IsNullOrEmpty(uri.Query) || !string.IsNullOrEmpty(uri.Fragment))
+                    errors.Add("آدرس NewTax باید HTTPS و بدون نام کاربری، پارامتر یا fragment باشد.");
+                if (string.IsNullOrWhiteSpace(Get("NEWTAX_PRIVATE_KEY_PATH"))) errors.Add("مسیر کلید خصوصی NewTax الزامی است.");
+                if (Get("MEMORY_ID").Length != 6 || Get("MEMORY_ID").Any(c => !(c is >= 'A' and <= 'Z' or >= '0' and <= '9')))
+                    errors.Add("شناسه حافظه NewTax باید ۶ حرف بزرگ لاتین یا رقم باشد.");
+                if (string.IsNullOrWhiteSpace(Get("TINS"))) errors.Add("شماره اقتصادی فروشنده الزامی است.");
+            }
             if (errors.Count > 0) return errors;
 
             var destination = Path.Combine(resourcesPath, "CustomerID", "CustomerInformation.local.xml");
