@@ -1,21 +1,38 @@
 @{
     Layout = "~/Views/Shared/_NewTaxLayout.cshtml";
     ViewData["Title"] = "گزارش وضعیت صورتحساب‌ها";
+    // Temporary visual preview; ?demo=false restores the live report.
+    var demo = !string.Equals(Context.Request.Query["demo"].ToString(), "false", StringComparison.OrdinalIgnoreCase);
 }
 <link rel="stylesheet" href="~/Content/NewTaxDashboard.css" asp-append-version="true" />
-<section id="newtaxDashboard" class="content" dir="rtl" data-url="@Url.Action("Summary", "NewTax")">
+<section id="newtaxDashboard" class="content" dir="rtl" data-demo="@(demo ? "true" : "false")" data-url="@Url.Action("Summary", "NewTax")" data-details-url="@Url.Action("StatusInvoices", "NewTax")">
     <header class="dashboard-heading">
-        <div><span class="dashboard-eyebrow">نمای کلی صورتحساب‌ها · ارسال مستقیم</span><h1>گزارش وضعیت صورتحساب‌ها</h1><p>آخرین وضعیت ذخیره‌شدهٔ صورتحساب‌های این مشتری</p></div>
+        <div><span class="dashboard-eyebrow">نمای کلی صورتحساب‌ها · ارسال مستقیم</span><h1>گزارش وضعیت صورتحساب‌ها</h1><p>@(demo ? "پیش‌نمایش گزارش با داده‌های نمونه" : "آخرین وضعیت ذخیره‌شدهٔ صورتحساب‌های این مشتری")</p></div>
         <button type="button" id="dashboardRefresh" class="btn btn-primary"><i class="fa fa-refresh" aria-hidden="true"></i> به‌روزرسانی آمار</button>
     </header>
     <div id="dashboardError" class="alert alert-danger" role="alert" hidden></div>
     <div class="dashboard-metrics" aria-label="تعداد صورتحساب‌ها">
-        <article class="dashboard-metric metric-sent"><i class="fa fa-file-text-o" aria-hidden="true"></i><h2>ارسال نشده</h2><strong data-value="Unsent">—</strong><p>در انتظار ارسال به سامانه</p></article>
-        <article class="dashboard-metric metric-inquiry-error"><i class="fa fa-clock-o" aria-hidden="true"></i><h2>در انتظار استعلام</h2><strong data-value="Pending">—</strong><p>ارسال‌شده، بدون نتیجهٔ نهایی</p></article>
-        <article class="dashboard-metric metric-accepted"><i class="fa fa-check-circle-o" aria-hidden="true"></i><h2>ثبت موفق</h2><strong data-value="Accepted">—</strong><p>تأیید نهایی در استعلام</p></article>
-        <article class="dashboard-metric metric-newtax-error"><i class="fa fa-times-circle-o" aria-hidden="true"></i><h2>ارسال‌شده با خطا</h2><strong data-value="Failed">—</strong><p>نیازمند بررسی توضیح وضعیت</p></article>
+        <button type="button" class="dashboard-metric metric-sent" data-dashboard-state="1" aria-pressed="false" aria-controls="dashboardDetails"><i class="fa fa-file-text-o" aria-hidden="true"></i><h2>ارسال نشده</h2><strong data-value="Unsent">—</strong><p>در انتظار ارسال به سامانه</p></button>
+        <button type="button" class="dashboard-metric metric-inquiry-error" data-dashboard-state="2" aria-pressed="false" aria-controls="dashboardDetails"><i class="fa fa-clock-o" aria-hidden="true"></i><h2>در انتظار استعلام</h2><strong data-value="Pending">—</strong><p>ارسال‌شده، بدون نتیجهٔ نهایی</p></button>
+        <button type="button" class="dashboard-metric metric-accepted" data-dashboard-state="4" aria-pressed="false" aria-controls="dashboardDetails"><i class="fa fa-check-circle-o" aria-hidden="true"></i><h2>ثبت موفق</h2><strong data-value="Accepted">—</strong><p>تأیید نهایی در استعلام</p></button>
+        <button type="button" class="dashboard-metric metric-newtax-error" data-dashboard-state="3" aria-pressed="false" aria-controls="dashboardDetails"><i class="fa fa-times-circle-o" aria-hidden="true"></i><h2>ارسال‌شده با خطا</h2><strong data-value="Failed">—</strong><p>نیازمند بررسی توضیح وضعیت</p></button>
     </div>
     <p id="dashboardStatus" role="status" aria-live="polite">در حال دریافت آمار…</p>
+    <section id="dashboardDetails" class="dashboard-chart dashboard-details" aria-labelledby="dashboardDetailsTitle" hidden>
+        <div class="dashboard-chart-heading"><h2 id="dashboardDetailsTitle">صورتحساب‌ها</h2><button type="button" id="dashboardDetailsClose" class="btn btn-default">بستن فهرست</button></div>
+        <p id="dashboardDetailsStatus" role="status" aria-live="polite"></p>
+        <div id="dashboardSendActions" class="dashboard-send-actions" hidden>
+            <button type="button" id="dashboardSelectAll" class="btn btn-default" disabled><i class="fa fa-check-square-o" aria-hidden="true"></i> انتخاب همه</button>
+            <button type="button" id="dashboardSendSelected" class="btn btn-primary" disabled><i class="fa fa-paper-plane-o" aria-hidden="true"></i> ارسال انتخاب‌شده‌ها</button>
+            <span role="status" aria-live="polite">انتخاب‌شده: <b id="dashboardSelectedCount">۰</b></span>
+        </div>
+        <div class="table-responsive">
+            <table id="dashboardInvoices" class="table table-striped table-bordered" style="width:100%">
+                <thead><tr><th><input id="dashboardSelectPage" type="checkbox" aria-label="انتخاب صورتحساب‌های این صفحه" disabled /></th><th>شماره فاکتور</th><th>شعبه</th><th>مشتری</th><th>تاریخ ثبت</th><th>مبلغ خالص</th><th>مالیات</th><th>شماره پیگیری</th><th>توضیح وضعیت</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </section>
     <div class="dashboard-charts">
         <section class="dashboard-chart" aria-labelledby="dashboardChartTitle">
             <div class="dashboard-chart-heading"><h2 id="dashboardChartTitle">مقایسهٔ تعداد صورتحساب‌ها</h2><span>واحد: صورتحساب</span></div>
@@ -25,7 +42,7 @@
                 <div class="dashboard-bar-row metric-accepted"><span>ثبت موفق</span><div class="dashboard-track"><div class="dashboard-bar" data-bar="Accepted"></div></div><strong data-value="Accepted">—</strong></div>
                 <div class="dashboard-bar-row metric-newtax-error"><span>ارسال‌شده با خطا</span><div class="dashboard-track"><div class="dashboard-bar" data-bar="Failed"></div></div><strong data-value="Failed">—</strong></div>
             </div>
-            <p class="dashboard-note">این گزارش از اطلاعات ذخیره‌شدهٔ همین مشتری تهیه می‌شود و ممکن است سوابق سرویس قبلی را هم شامل شود. برای دریافت وضعیت تازه از سامانه، از پنل استعلام استفاده کنید.</p>
+            <p class="dashboard-note">@(demo ? "اعداد این گزارش فقط برای مشاهدهٔ ظاهر کارت‌ها و نمودارها هستند؛ هیچ وضعیت واقعی تغییر نمی‌کند." : "این گزارش از اطلاعات ذخیره‌شدهٔ همین مشتری تهیه می‌شود و ممکن است سوابق سرویس قبلی را هم شامل شود. برای دریافت وضعیت تازه از سامانه، از پنل استعلام استفاده کنید.")</p>
         </section>
         <section class="dashboard-chart" aria-labelledby="dashboardPieTitle">
             <div class="dashboard-chart-heading"><h2 id="dashboardPieTitle">سهم وضعیت فعلی صورتحساب‌ها</h2></div>

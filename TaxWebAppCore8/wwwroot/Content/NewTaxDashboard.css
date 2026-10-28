@@ -15,6 +15,20 @@
 #newtaxDashboard .dashboard-metric h2 { font-size: 16px; margin: 18px 0 10px; font-weight: 700; }
 #newtaxDashboard .dashboard-metric strong { display: block; font-size: 38px; font-weight: 700; color: var(--metric); margin-bottom: 8px; overflow-wrap: anywhere; }
 #newtaxDashboard .dashboard-metric p { font-size: 12px; line-height: 1.9; margin: 0; }
+#newtaxDashboard button.dashboard-metric { width: 100%; font: inherit; text-align: right; color: inherit; cursor: pointer; transition: box-shadow .15s ease; }
+#newtaxDashboard .dashboard-metric:hover, #newtaxDashboard .dashboard-metric[aria-pressed=true] { box-shadow: 0 0 0 2px var(--metric); }
+#newtaxDashboard [data-dashboard-state]:focus-visible { outline: 3px solid #146f7b; outline-offset: 4px; }
+#newtaxDashboard .dashboard-bar-row[role=button] { cursor: pointer; border-radius: 6px; }
+#newtaxDashboard .dashboard-pie-legend button { border: 0; padding: 2px 0; background: transparent; color: inherit; font: inherit; text-align: right; text-decoration: underline; text-underline-offset: 4px; }
+#newtaxDashboard .dashboard-details { margin: 0 0 24px; }
+#newtaxDashboard .dashboard-details .table-responsive { margin-top: 16px; }
+#newtaxDashboard #dashboardInvoices { min-width: 900px; font-size: 12px; }
+#newtaxDashboard #dashboardInvoices th { background: #eaf2f6; white-space: nowrap; }
+#newtaxDashboard #dashboardInvoices td, #newtaxDashboard #dashboardInvoices th { text-align: right; vertical-align: middle; padding: 10px; }
+#newtaxDashboard #dashboardDetailsStatus, #newtaxDashboard #dashboardInvoices_wrapper { font-size: 12px; }
+#newtaxDashboard .dashboard-send-actions { display: flex; direction: rtl; flex-wrap: wrap; align-items: center; gap: 16px; padding: 12px; margin: 14px 0; background: #f0f4f8; border-radius: 10px; }
+#newtaxDashboard .dashboard-send-actions > span { margin-inline-start: auto; font-size: 13px; }
+#newtaxDashboard input[type=checkbox] { accent-color: #146f7b; width: 16px; height: 16px; cursor: pointer; }
 #newtaxDashboard .dashboard-charts { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
 #newtaxDashboard .dashboard-chart { background: white; border: 1px solid #dce5ed; border-radius: 14px; padding: 20px; min-width: 0; }
 #newtaxDashboard .dashboard-donut { width: 210px; height: 210px; border-radius: 50%; margin: 12px auto 22px; display: grid; place-items: center; background: #e5ebf0; }

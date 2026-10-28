@@ -404,6 +404,19 @@
 }
 
 /* Invoice workspace: same palette, clearer filters and selection actions. */
+/* Keep DataTables sort indicators in a reserved space on the left in RTL tables. */
+:is(#newtaxSendPage, #newtaxInquiryPage, #newtaxDashboard) :is(#newtaxInvoices, #dashboardInvoices).dataTable thead th:is(.sorting, .sorting_asc, .sorting_desc, .sorting_asc_disabled, .sorting_desc_disabled) {
+    padding-inline-start: 12px;
+    padding-inline-end: 32px;
+}
+:is(#newtaxSendPage, #newtaxInquiryPage, #newtaxDashboard) :is(#newtaxInvoices, #dashboardInvoices).dataTable thead th:is(.sorting, .sorting_asc, .sorting_desc, .sorting_asc_disabled, .sorting_desc_disabled)::after {
+    left: 8px;
+    right: auto;
+    top: 50%;
+    bottom: auto;
+    transform: translateY(-50%);
+    line-height: 1;
+}
 .newtax-invoices #frmSearch { direction: rtl; text-align: right; margin: 0; padding: 18px; border: 1px solid #dce5ed; border-radius: 12px; background: #f8fafc; }
 .newtax-invoices .newtax-filter-heading { display: flex; align-items: center; gap: 8px; margin: 0 0 20px; font-size: 14px; font-weight: 700; color: #183047; line-height: 1.8; }
 .newtax-invoices .newtax-filter-heading i { color: #146f7b; }

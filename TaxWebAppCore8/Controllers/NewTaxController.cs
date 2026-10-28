@@ -102,6 +102,26 @@ public sealed class NewTaxController(ILogger<NewTaxController> logger) : Control
         catch (Exception ex) { return Failure(ex, "آمار دریافت نشد؛ اتصال دیتابیس را بررسی کنید."); }
     }
 
+    [HttpGet]
+    public async Task<IActionResult> StatusInvoices(byte status)
+    {
+        if (!ModelState.IsValid || status is < 1 or > 4)
+            return BadRequest(new { Message = "وضعیت انتخاب‌شده معتبر نیست." });
+        try
+        {
+            var rows = await BMain._newTaxService.GetAllInvoice(new() { StorID = -1 });
+            // Match Summary: select the latest record before filtering its status.
+            var matches = rows.GroupBy(row => row.InvoiceId)
+                .Select(group => group.OrderByDescending(row => row.fLastSendDate).ThenByDescending(row => row.fID).First())
+                .Where(row => (row.fSendState ?? 1) == status)
+                .Select(row => new { row.RealInvoiceNumber, row.StoreName, row.CustomerName, row.PersianCreateDate,
+                    row.NetPrice, row.TotalTax, ReferenceNumber = row.fTaxHistoryReferenceNumber ?? row.taxReferenceNumber ?? row.ReferenceNumber ?? "",
+                    Caption = row.fListOfErrorCaption ?? "" }).ToList();
+            return Json(new { Success = true, Rows = matches });
+        }
+        catch (Exception ex) { return Failure(ex, "فهرست صورتحساب‌های این وضعیت دریافت نشد."); }
+    }
+
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Export(NewTaxPageFilter filter)
     {
