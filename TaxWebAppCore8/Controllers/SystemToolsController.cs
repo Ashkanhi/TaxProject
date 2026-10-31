@@ -37,7 +37,7 @@ public sealed class SystemToolsController(SystemToolsAccess access) : Controller
     private IActionResult Prompt(string target)
     {
         ViewData["Target"] = target;
-        ViewData["ToolTitle"] = target switch { "setup" => "بررسی صحت ساختار", "customer" => "تنظیمات ارسال", _ => "لاگ‌های سیستم" };
+        ViewData["ToolTitle"] = target switch { "setup" => "بررسی صحت ساختار", "newtax-setup" => "بررسی صحت ساختار", "customer" => "تنظیمات ارسال", _ => "لاگ‌های سیستم" };
         ViewData["Configured"] = access.IsConfigured;
         return View("Unlock");
     }

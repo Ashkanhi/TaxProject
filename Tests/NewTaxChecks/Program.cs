@@ -173,6 +173,17 @@ try
     Check(settingsStore.Save(form).Count > 0, "Settings reject insecure NewTax URL");
 }
 finally { Directory.Delete(folder, true); }
+var setup = NewTaxSetupCatalog.Objects;
+Check(setup.Select(x => x.Name).Distinct(StringComparer.OrdinalIgnoreCase).Count() == setup.Count, "NewTax setup object names are unique");
+Check(!setup.Any(x => x.Name.StartsWith("Omid", StringComparison.OrdinalIgnoreCase)), "NewTax setup excludes Omid-specific tables");
+Check(setup.SelectMany(x => x.Dependencies ?? []).All(name => setup.Any(x => x.Name == name)), "NewTax setup dependencies are complete");
+Check(new[] { "TaxHistory", "tTaxHistoryStateParallel", "tSendInvoiceTaxTissLog", "TaxGovermentInvoiceInfo", "TaxGovermentInvoiceFinal", "TaxGovermentSendLog", "vwTaxHistory", "vw_TaxGovermentInvoiceHeaderForShow" }.All(name => setup.Any(x => x.Name == name)), "NewTax read and state-store objects are covered");
+Check(setup.Single(x => x.Name == "TaxGovermentSaveInvoiceInsert").ArgumentCount == 5
+    && setup.Single(x => x.Name == "TaxGovermentInvoiceFinalInsertUpdate").ArgumentCount == 6
+    && setup.Single(x => x.Name == "TaxGovermentSaveInvoiceLogInsert").ArgumentCount == 5, "NewTax save procedure arities match the state store");
+Check(setup.Single(x => x.Name == "UV_TaxInfo_BulkSale").Columns.Length > 3, "NewTax bulk source columns come from the reviewed detail SQL");
+Check(SystemToolsAccess.ValidTarget("newtax-setup") && SystemToolsAccess.ControllerFor("newtax-setup") == "NewTaxSetup"
+    && SystemToolsAccess.ControllerFor("setup") == "OmidSetup", "NewTax setup has an independent password-protected route");
 Console.WriteLine($"{checks} NewTax checks passed; no live network or database used.");
 
 public class ContextProxy : DispatchProxy

@@ -1,0 +1,25 @@
+@{
+    Layout = "~/Views/Shared/_NewTaxLayout.cshtml";
+    ViewData["Title"] = "بررسی صحت ساختار";
+}
+<section id="newtaxSetup" class="content" dir="rtl" data-check-url="@Url.Action("Check", "NewTaxSetup")">
+    <div class="box box-primary">
+        <div class="box-header with-border"><h1 class="box-title">بررسی صحت ساختار</h1></div>
+        <div class="box-body">
+            <p>بررسی موجودیت‌های مورد استفاده در خواندن فاکتور، ارسال، ذخیرهٔ پاسخ و استعلام NewTax در دیتابیس تنظیم‌شدهٔ همین مشتری.</p>
+            <p>بررسی شامل وجود و نوع موجودیت، ستون‌های مورد نیاز مدل برنامه، قابلیت خواندن جدول‌ها و ویوها، تعداد پارامترهای رویه‌ها و وابستگی‌هاست. این فرم فقط بررسی می‌کند و هیچ جدول یا اطلاعاتی ایجاد یا تغییر نمی‌دهد.</p>
+            <button id="newtaxSetupRefresh" type="button" class="btn btn-primary">بررسی مجدد</button>
+            <span id="newtaxSetupSummary" role="status" aria-live="polite"></span>
+            <p id="newtaxSetupMessage" role="alert" style="margin-top:12px;white-space:pre-wrap"></p>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead><tr><th>وضعیت</th><th>نام / نوع</th><th>کاربرد در NewTax</th><th>نتیجهٔ بررسی</th></tr></thead>
+                    <tbody id="newtaxSetupRows"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+@section js_UAGManagment {
+    <script src="~/Content/MyJS/NewTaxSetup.js" asp-append-version="true"></script>
+}

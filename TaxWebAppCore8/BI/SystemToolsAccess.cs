@@ -10,10 +10,10 @@ public sealed class SystemToolsAccess(IConfiguration configuration)
 {
     private string? Password => configuration["SystemTools:Password"];
     public bool IsConfigured => !string.IsNullOrWhiteSpace(Password);
-    public static bool ValidTarget(string? target) => target is "setup" or "logs" or "customer";
+    public static bool ValidTarget(string? target) => target is "setup" or "newtax-setup" or "logs" or "customer";
     public static string ControllerFor(string target) => target switch
     {
-        "setup" => "OmidSetup", "logs" => "SystemLogs", "customer" => "CustomerSettings",
+        "setup" => "OmidSetup", "newtax-setup" => "NewTaxSetup", "logs" => "SystemLogs", "customer" => "CustomerSettings",
         _ => throw new ArgumentException("Invalid system tools target.")
     };
     private static string Key(string target) => "SystemTools:" + target;
